@@ -28,7 +28,8 @@ impl Material for LambertianMat {
 
         *scattered = Ray{
             origin: record.point,
-            direction: scatter
+            direction: scatter,
+            time: _ray.time
         };
         *attentuation = self.albedo;
         return true;
@@ -60,7 +61,8 @@ impl Material for MetalMat {
         let reflected = Vec3::reflect(&ray.direction.normalize(), &record.normal);
         *scattered = Ray{
             origin: record.point,
-            direction: reflected + self.fuzz * Vec3::random_in_unit_sphere()
+            direction: reflected + self.fuzz * Vec3::random_in_unit_sphere(),
+            time: ray.time
         };
         *attentuation = self.albedo;
         return scattered.direction.dot(&record.normal) > 0.0;
@@ -110,7 +112,11 @@ impl Material for DielectricMat {
             direction = Vec3::refract(unit_direction, record.normal, refraction_ratio);
         }
 
-        *scattered = Ray{ origin: record.point, direction: direction };
+        *scattered = Ray{ 
+            origin: record.point, 
+            direction: direction,
+            time: ray.time
+        };
         return true;
     }
 }

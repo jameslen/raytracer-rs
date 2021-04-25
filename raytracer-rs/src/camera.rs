@@ -1,6 +1,10 @@
 use crate::vec3::Vec3;
 use crate::ray::Ray;
 
+extern crate rand; 
+
+use rand::prelude::*;
+
 pub struct Camera {
     origin: Vec3,
     lower_left_corner: Vec3,
@@ -9,11 +13,13 @@ pub struct Camera {
     u: Vec3,
     v: Vec3,
     w: Vec3,
-    lens_radius: f32
+    lens_radius: f32,
+    time_start: f32,
+    time_end: f32
 }
 
 impl Camera {
-    pub fn new(origin: Vec3, target: Vec3, up: Vec3, vfov: f32, aspect_ratio: f32, aperture: f32, focus_distance: f32) -> Camera {
+    pub fn new(origin: Vec3, target: Vec3, up: Vec3, vfov: f32, aspect_ratio: f32, aperture: f32, focus_distance: f32, time_start: f32, time_end: f32) -> Camera {
         let h = f32::tan(vfov / 2.0);
         let viewport_height = 2.0 * h;
         let viewport_width = viewport_height * aspect_ratio;
@@ -33,7 +39,9 @@ impl Camera {
             u: u,
             v: v,
             w: w,
-            lens_radius: aperture / 2.0
+            lens_radius: aperture / 2.0,
+            time_start: time_start,
+            time_end: time_end
         }
     }
 
@@ -41,9 +49,12 @@ impl Camera {
         let rd = self.lens_radius * Vec3::random_in_unit_disk();
         let offset = self.u * rd.x + self.v * rd.y;
 
+        let mut rng = rand::thread_rng();
+
         Ray {
             origin: self.origin + offset,
-            direction: self.lower_left_corner + s * self.horizontal + t * self.vertical - self.origin - offset
+            direction: self.lower_left_corner + s * self.horizontal + t * self.vertical - self.origin - offset,
+            time: rng.gen_range(self.time_start..self.time_end)
         }
     }
 }
