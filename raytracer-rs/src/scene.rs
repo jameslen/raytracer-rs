@@ -1,13 +1,13 @@
 use crate::shapes::*;
-use crate::vec3::Vec3;
+//use crate::vec3::Vec3;
 use crate::ray::Ray;
-use crate::materials::Material;
+//use crate::materials::Material;
 use crate::hit_record::HitRecord;
 
 use std::rc::Rc;
 
 pub struct Scene {
-    shapes: Vec<Sphere>
+    shapes: Vec<Rc<dyn Hittable>>
 }
 
 impl Scene {
@@ -15,8 +15,8 @@ impl Scene {
         Scene{ shapes: Vec::new() }
     }
 
-    pub fn add_sphere<T: 'static + Material>(&mut self, center: &Vec3, radius: f32, material: T) {
-        self.shapes.push(Sphere{ center: *center, radius: radius, material: Rc::new(material)});
+    pub fn add_shape<S: 'static + Hittable>(&mut self, shape: &S) {
+        self.shapes.push(Rc::new(*shape));
     }
 
     pub fn clear(&mut self) {

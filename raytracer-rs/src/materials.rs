@@ -6,6 +6,7 @@ pub trait Material {
     fn scatter(&self, ray: &Ray, record: &HitRecord, attentuation: &mut Vec3, scattered: &mut Ray) -> bool;
 }
 
+#[derive(Copy, Clone)]
 pub struct LambertianMat {
     albedo: Vec3
 }
@@ -36,6 +37,7 @@ impl Material for LambertianMat {
     }
 }
 
+#[derive(Copy, Clone)]
 pub struct MetalMat {
     albedo: Vec3,
     fuzz: f32
@@ -69,6 +71,7 @@ impl Material for MetalMat {
     }
 }
 
+#[derive(Copy, Clone)]
 pub struct DielectricMat {
     index_refraction: f32
 }
@@ -121,6 +124,7 @@ impl Material for DielectricMat {
     }
 }
 
+#[derive(Copy, Clone)]
 pub struct NoMaterial {
 }
 

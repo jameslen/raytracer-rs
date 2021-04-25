@@ -37,7 +37,7 @@ fn ray_color(ray: &Ray, world: &dyn Hittable, depth: i32) -> Vec3 {
     let mut record = HitRecord::new();
 
     if world.intersect(ray, 0.005, f32::INFINITY, &mut record) == true {
-        let mut scattered = Ray{ origin: Vec3{ x: 0.0, y: 0.0, z: 0.0 }, direction: Vec3{ x: 0.0, y: 0.0, z: 0.0 } };
+        let mut scattered = Ray{ origin: Vec3{ x: 0.0, y: 0.0, z: 0.0 }, direction: Vec3{ x: 0.0, y: 0.0, z: 0.0 }, time: ray.time };
         let mut attentuation = Vec3{ x: 1.0, y: 1.0, z: 1.0 };
 
         if record.material.scatter(ray, &record, &mut attentuation, &mut scattered) {
@@ -60,7 +60,7 @@ pub fn generate_random_world() -> Scene {
     let mut s = Scene::new();
 
     // Ground
-    s.add_sphere(&Vec3{x: 0.0, y: -1000.0, z: 0.0}, 1000.0, LambertianMat::new(Vec3{x: 0.5, y: 0.5, z: 0.5}));
+    s.add_shape(&Sphere::new(Vec3{x: 0.0, y: -1000.0, z: 0.0}, 1000.0, &LambertianMat::new(Vec3{x: 0.5, y: 0.5, z: 0.5})));
     
     let mut rng = rand::thread_rng();
 
@@ -82,19 +82,20 @@ pub fn generate_random_world() -> Scene {
 
             if (center - point).length() > 0.9 {
                 if choose_mat < 0.8 {
-                    s.add_sphere(&center, 0.2, LambertianMat::new(Vec3::random() * Vec3::random()));
+                    let center2 = center + Vec3{ x: 0.0, y: rng.gen_range(0.0..0.5), z: 0.0 };
+                    s.add_shape(&MovingSphere::new(center, center2, 0.0, 1.0, 0.2, &LambertianMat::new(Vec3::random() * Vec3::random())));
                 } else if choose_mat < 0.95 {
-                    s.add_sphere(&center, 0.2, MetalMat::new(Vec3::random_range(0.5,1.0), rng.gen_range(0.5..1.0)));
+                    s.add_shape(&Sphere::new(center, 0.2, &MetalMat::new(Vec3::random_range(0.5,1.0), rng.gen_range(0.5..1.0))));
                 } else {
-                    s.add_sphere(&center, 0.2, DielectricMat::new(1.5));
+                    s.add_shape(&Sphere::new(center, 0.2, &DielectricMat::new(1.5)));
                 }
             }
         }
     }
 
-    s.add_sphere(&Vec3{x: 0.0, y: 1.0, z: 0.0}, 1.0, DielectricMat::new(1.5));
-    s.add_sphere(&Vec3{x:-4.0, y: 1.0, z: 0.0}, 1.0, LambertianMat::new(Vec3{x: 0.4, y: 0.2, z: 0.1}));
-    s.add_sphere(&Vec3{x: 4.0, y: 1.0, z: 0.0}, 1.0, MetalMat::new(Vec3{x:0.7, y: 0.6, z: 0.5}, 0.0));
+    s.add_shape(&Sphere::new(Vec3{x: 0.0, y: 1.0, z: 0.0}, 1.0, &DielectricMat::new(1.5)));
+    s.add_shape(&Sphere::new(Vec3{x:-4.0, y: 1.0, z: 0.0}, 1.0, &LambertianMat::new(Vec3{x: 0.4, y: 0.2, z: 0.1})));
+    s.add_shape(&Sphere::new(Vec3{x: 4.0, y: 1.0, z: 0.0}, 1.0, &MetalMat::new(Vec3{x:0.7, y: 0.6, z: 0.5}, 0.0)));
 
     return s;
 }
@@ -111,16 +112,16 @@ fn main() {
 
     // TODO: get dimensions from CLI
     // Image
-    let aspect_ratio = 3.0 / 2.0;//16.0 / 9.0;
-    let image_width = 1200;//400;
+    let aspect_ratio = 16.0 / 9.0;
+    let image_width = 400;
     let image_height = (image_width as f32 / aspect_ratio) as u32;
-    let samples_per_pixel = 10; //100;
+    let samples_per_pixel = 100;
     let max_depth = 50;
 
     // Camera
     let origin = Vec3{x: 13.0, y: 2.0, z: 3.0};
     let target = Vec3{x: 0.0, y: 0.0, z: 0.0};
-    let camera = Camera::new(origin, target, Vec3{x: 0.0, y: 1.0, z: 0.0}, degree_to_rad(20.0), aspect_ratio, 0.1, 10.0); 
+    let camera = Camera::new(origin, target, Vec3{x: 0.0, y: 1.0, z: 0.0}, degree_to_rad(20.0), aspect_ratio, 0.1, 10.0, 0.0, 1.0); 
 
     let mut rng = rand::thread_rng();
 

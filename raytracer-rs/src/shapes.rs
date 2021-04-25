@@ -9,10 +9,21 @@ pub trait Hittable {
     fn intersect(&self, ray: &Ray, t_min: f32, t_max: f32, record: &mut HitRecord) -> bool;
 }
 
+#[derive(Clone)]
 pub struct Sphere {
     pub center: Vec3,
     pub radius: f32,
     pub material: Rc::<dyn Material>
+}
+
+impl Sphere {
+    pub fn new<T: 'static + Material>(center: Vec3, radius: f32, material: &T) -> Sphere {
+        Sphere {
+            center: center,
+            radius: radius,
+            material: Rc::new(*material)
+        }
+    }
 }
 
 impl Hittable for Sphere {
@@ -56,6 +67,7 @@ impl Hittable for Sphere {
     }
 }
 
+#[derive(Clone)]
 pub struct MovingSphere {
     pub center_start: Vec3,
     pub center_end: Vec3,
@@ -66,6 +78,17 @@ pub struct MovingSphere {
 }
 
 impl MovingSphere {
+    pub fn new<T: 'static + Material>(center_start: Vec3, center_end: Vec3, radius: f32, time_start: f32, time_end: f32, material: &T) -> MovingSphere {
+        MovingSphere {
+            center_start: center_start,
+            center_end: center_end,
+            time_start: time_start,
+            time_end: time_end,
+            radius: radius,
+            material: Rc::new(*material)
+        }
+    }
+
     pub fn center(&self, time: f32) -> Vec3 {
         return self.center_start + ((time - self.time_start) / (self.time_end - self.time_start) * (self.center_end - self.center_start));
     }
