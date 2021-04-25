@@ -1,6 +1,8 @@
 use crate::shapes::*;
 use crate::vec3::Vec3;
 use crate::ray::Ray;
+use crate::materials::Material;
+use crate::hit_record::HitRecord;
 
 use std::rc::Rc;
 

@@ -5,6 +5,8 @@ mod ray;
 mod shapes;
 mod scene;
 mod camera;
+mod materials;
+mod hit_record;
 
 use std::fs::File;
 use std::io::Write;
@@ -15,6 +17,8 @@ use scene::Scene;
 use shapes::*;
 use camera::Camera;
 use rand::prelude::*;
+use materials::*;
+use hit_record::*;
 
 
 fn write_color(color: &Vec3, samples_per_pixel: f32) -> String {
@@ -110,8 +114,8 @@ fn main() {
     let aspect_ratio = 3.0 / 2.0;//16.0 / 9.0;
     let image_width = 1200;//400;
     let image_height = (image_width as f32 / aspect_ratio) as u32;
-    let samples_per_pixel = 50; //100;
-    let max_depth = 5;//50;
+    let samples_per_pixel = 10; //100;
+    let max_depth = 50;
 
     // Camera
     let origin = Vec3{x: 13.0, y: 2.0, z: 3.0};
@@ -125,17 +129,15 @@ fn main() {
 
     let image_header = format!("P3\n{} {}\n255\n", image_width, image_height);
 
-    file.write_all(image_header.as_bytes());
+    file.write_all(image_header.as_bytes()).expect("Could not write image header");
 
-    let mut j = (image_height - 1) as i32;
-    while j >= 0 {
-        let mut i = 0;
-        while i < image_width {
+    for j in 0..image_height {
+        for i in 0..image_width {
             let mut sample = 0;
             let mut color = Vec3{ x: 0.0, y: 0.0, z: 0.0 };
             while sample < samples_per_pixel {
                 let u = (i as f32 + rng.gen::<f32>()) / (image_width - 1) as f32;
-                let v = (j as f32 + rng.gen::<f32>()) / (image_height - 1) as f32;
+                let v = ((image_height - 1 - j) as f32 + rng.gen::<f32>()) / (image_height - 1) as f32;
 
                 let r = camera.get_ray(u, v);
 
@@ -144,9 +146,6 @@ fn main() {
             }
             let color_string : String = write_color(&color, samples_per_pixel as f32); 
             file.write_all(color_string.as_bytes()).expect("Couldn't write color");
-
-            i = i + 1;
         }
-        j = j - 1;
     }
 }
