@@ -54,6 +54,29 @@ impl Vec3
         }
     }
 
+    pub fn random_in_unit_disk() -> Vec3 {
+        let mut rng = rand::thread_rng();
+        loop {
+            let p = Vec3{ 
+                x: rng.gen_range(-1.0..1.0),
+                y: rng.gen_range(-1.0..1.0),  
+                z: 0.0
+            };
+
+            if p.length_sq() >= 1.0 {
+                return p;
+            }
+        }
+    }
+
+    pub fn cross(&self, _rhs: Vec3) -> Vec3 {
+        Vec3 {
+            x: self.y * _rhs.z - self.z * _rhs.y,
+            y: self.z * _rhs.x - self.x * _rhs.z,
+            z: self.x * _rhs.y - self.y * _rhs.x
+        }
+    }
+
     pub fn dot(&self, other: &Vec3) -> f32 {
         return self.x * other.x + self.y * other.y + self.z * other.z;
     }
@@ -83,7 +106,8 @@ impl Vec3
     }
 
     pub fn refract(uv: Vec3, normal: Vec3, etai_over_etat: f32) -> Vec3 {
-        let cos_theta = f32::min(Vec3::dot(&-uv, &normal), 1.0);
+        let dot_p = Vec3::dot(&-uv, &normal);
+        let cos_theta = f32::min(dot_p, 1.0);
         let r_out_perp = etai_over_etat * (uv + cos_theta * normal);
         let r_out_parallel = -f32::sqrt(f32::abs(1.0 - r_out_perp.length_sq())) * normal;
         

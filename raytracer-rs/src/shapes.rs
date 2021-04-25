@@ -78,12 +78,25 @@ impl DielectricMat {
             index_refraction: index
         }
     }
+
+    fn reflectance(&self, cosine: f32, ref_index: f32) -> f32 {
+        let mut r0 = (1.0 - ref_index) / (1.0 + ref_index);
+        r0 = r0 * r0;
+
+        return r0 + (1.0 - r0) * f32::powf(1.0 - cosine, 5.0); 
+    }
 }
 
 impl Material for DielectricMat {
     fn scatter(&self, ray: &Ray, record: &HitRecord, attentuation: &mut Vec3, scattered: &mut Ray) -> bool {
         *attentuation = Vec3{ x: 1.0, y: 1.0, z: 1.0 };
-        let refraction_ratio = if record.front_face { self.index_refraction } else { self.index_refraction };
+        let refraction_ratio: f32;
+        
+        if record.front_face { 
+            refraction_ratio = 1.0 / self.index_refraction;
+        } else { 
+            refraction_ratio = self.index_refraction;
+        };
 
         let unit_direction = ray.direction.normalize();
         let cos_theta = f32::min(Vec3::dot(&-unit_direction, &record.normal), 1.0);
@@ -92,7 +105,7 @@ impl Material for DielectricMat {
         let cannot_refract = refraction_ratio * sin_theta > 1.0;
         let direction: Vec3;
 
-        if cannot_refract {
+        if cannot_refract || self.reflectance(cos_theta, refraction_ratio) > rand::random() {
             direction = Vec3::reflect(&unit_direction, &record.normal);
         } else {
             direction = Vec3::refract(unit_direction, record.normal, refraction_ratio);
@@ -171,9 +184,10 @@ impl Hittable for Sphere {
 
         let sqrtd = discriminant.sqrt();
 
-        let root = (-half_b - sqrtd) / a;
+        let mut root = (-half_b - sqrtd) / a;
+
         if root < t_min || root > t_max {
-            let root = (-half_b + sqrtd) / a;
+            root = (-half_b + sqrtd) / a;
 
             if root < t_min || root > t_max {
                 return false;
