@@ -4,10 +4,10 @@ use crate::vec3::Vec3;
 
 use rand::prelude::*;
 
-const POINT_COUNT = 256;
+const POINT_COUNT: usize = 256;
 
 pub struct Perlin {
-    pub rand_float: Vec<f32>,
+    pub rand_vec: Vec<Vec3>,
     pub perm_x: Vec<i32>,
     pub perm_y: Vec<i32>,
     pub perm_z: Vec<i32>
@@ -15,17 +15,17 @@ pub struct Perlin {
 
 impl Perlin {
     pub fn new() -> Self {
-        let rand_float = Vec::<f32>::new();
-        rand_float.reserve(POINT_COUNT);
+        let mut rand_vec = Vec::<Vec3>::new();
+        rand_vec.reserve(POINT_COUNT);
 
         let mut rng = rand::thread_rng();
 
-        for i in 0..POINT_COUNT {
-            rand_float.push(rng.gen());
+        for _ in 0..POINT_COUNT {
+            rand_vec.push(Vec3::random_range(-1.0, 1.0));
         }
 
         Perlin {
-            rand_float: rand_float,
+            rand_vec: rand_vec,
             perm_x: Perlin::perlin_generate_perm(),
             perm_y: Perlin::perlin_generate_perm(),
             perm_z: Perlin::perlin_generate_perm()
@@ -33,12 +33,56 @@ impl Perlin {
     }
 
     fn perlin_generate_perm() -> Vec<i32> {
-        let mut p = vec![0..POINT_COUNT];
+        let mut p: Vec<i32> = (0..(POINT_COUNT as i32)).collect();
 
         let mut rng = rand::thread_rng();
 
-        p.shuffle(rng);
+        p.shuffle(&mut rng);
 
         return p;
+    }
+
+    pub fn noise(&self, point: Vec3) -> f32 {
+        let mut u = point.x - point.x.floor();
+        let mut v = point.y - point.y.floor();
+        let mut w = point.z - point.z.floor();
+
+        let i = point.x.floor() as i32;
+        let j = point.y.floor() as i32;
+        let k = point.z.floor() as i32;
+
+        let mut c = [[[Vec3{x:0.0, y:0.0, z:0.0}; 2]; 2]; 2];
+
+        for di in 0..2 {
+            for dj in 0..2 {
+                for dk in 0..2 {
+                    c[di][dj][dk] = self.rand_vec[
+                        (self.perm_x[(i as usize + di) & 255] ^ 
+                         self.perm_y[(j as usize + dj) & 255] ^ 
+                         self.perm_z[(k as usize + dk) & 255]) as usize
+                    ];
+                }
+            }
+        }
+
+        let uu = u * u * (3.0 - 2.0 * u);
+        let vv = v * v * (3.0 - 2.0 * v);
+        let ww = w * w * (3.0 - 2.0 * w);
+
+        let mut acc: f32 = 0.0;
+
+        for di in 0..2 {
+            for dj in 0..2 {
+                for dk in 0..2 {
+                    let weight = Vec3{x: u - di as f32, y: v - dj as f32, z: w - dk as f32 };
+                    acc += (di as f32 * uu + (1.0 - di as f32) * (1.0 - uu)) *
+                           (dj as f32 * vv + (1.0 - dj as f32) * (1.0 - vv)) *
+                           (dk as f32 * ww + (1.0 - dk as f32) * (1.0 - ww)) * 
+                           weight.dot(&c[di][dj][dk]);
+                }
+            }
+        }
+
+        return acc;
     }
 }

@@ -10,6 +10,7 @@ mod hit_record;
 mod aabb;
 mod bvh_node;
 mod texture;
+mod perlin;
 
 use std::fs::File;
 use std::io::Write;
@@ -124,6 +125,17 @@ fn two_spheres() -> Scene {
     return s;
 }
 
+fn two_perlin_spheres() -> Scene {
+    let mut s = Scene::new();
+
+    let noise_texture = Rc::new(NoiseTexture::new(4.0));
+
+    s.add_shape(Sphere::new(Vec3{x: 0.0, y: -1000.0, z: 0.0}, 1000.0, LambertianMat::from_shared_texture(noise_texture.clone())));
+    s.add_shape(Sphere::new(Vec3{x: 0.0, y: 2.0, z: 0.0}, 2.0, LambertianMat::from_shared_texture(noise_texture.clone())));
+
+    return s;
+}
+
 enum ImageQuality {
     Low,
     High
@@ -131,7 +143,8 @@ enum ImageQuality {
 
 enum SceneType {
     Random,
-    TwoSpheres
+    TwoSpheres,
+    PerlinSpheres
 }
 
 fn main() {
@@ -152,7 +165,7 @@ fn main() {
     let target: Vec3;
 
     let quality = ImageQuality::Low;
-    let scene = SceneType::TwoSpheres;
+    let scene = SceneType::PerlinSpheres;
 
     match quality {
         ImageQuality::Low => {
@@ -181,6 +194,13 @@ fn main() {
         },
         SceneType::TwoSpheres => {
             world = two_spheres();
+            origin = Vec3{x: 13.0, y: 2.0, z: 3.0};
+            target = Vec3{x: 0.0, y: 0.0, z: 0.0};
+            fov = degree_to_rad(20.0);
+            aperture = 0.0;
+        },
+        SceneType::PerlinSpheres => {
+            world = two_perlin_spheres();
             origin = Vec3{x: 13.0, y: 2.0, z: 3.0};
             target = Vec3{x: 0.0, y: 0.0, z: 0.0};
             fov = degree_to_rad(20.0);

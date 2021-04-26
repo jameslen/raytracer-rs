@@ -1,4 +1,5 @@
 use crate::vec3::Vec3;
+use crate::perlin::Perlin;
 
 use std::rc::Rc;
 
@@ -53,5 +54,25 @@ impl Texture for CheckeredTexture {
         } else {
             return self.even.value(coords, point);
         }
+    }
+}
+
+pub struct NoiseTexture {
+    noise: Perlin,
+    frequency: f32
+}
+
+impl NoiseTexture {
+    pub fn new(freq: f32) -> Self {
+        Self {
+            noise: Perlin::new(),
+            frequency: freq
+        }
+    }
+}
+
+impl Texture for NoiseTexture {
+    fn value(&self, coords: (f32, f32), point: Vec3) -> Vec3 {
+        return Vec3{x: 0.5, y: 0.5, z: 0.5} * (1.0 + self.noise.noise(self.frequency * point));
     }
 }
