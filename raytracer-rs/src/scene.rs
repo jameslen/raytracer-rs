@@ -8,7 +8,7 @@ use crate::aabb::AABB;
 use std::rc::Rc;
 
 pub struct Scene {
-    pub shapes: Vec<Rc<dyn Hittable>>
+    pub shapes: Vec<Rc<dyn Hittable>>,
 }
 
 impl Scene {

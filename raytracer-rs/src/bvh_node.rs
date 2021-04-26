@@ -6,16 +6,17 @@ use crate::hit_record::HitRecord;
 
 use rand::prelude::*;
 use std::rc::Rc;
+use std::cmp::Ordering;
 
 struct EmptyHittable {
 
 }
 
 impl Hittable for EmptyHittable {
-    fn intersect(&self, ray: &Ray, t_min: f32, t_max: f32, record: &mut HitRecord) -> bool {
+    fn intersect(&self, _ray: &Ray, _t_min: f32, _t_max: f32, _record: &mut HitRecord) -> bool {
         return false;
     }
-    fn bounding_box(&self, t0: f32, t1: f32, aabb: &mut AABB) -> bool {
+    fn bounding_box(&self, _t0: f32, _t1: f32, _aabb: &mut AABB) -> bool {
         return false;
     }
 }
@@ -39,20 +40,35 @@ impl BVHNode {
     }
 
     pub fn from_vector(objects: Vec<Rc<dyn Hittable>>, t0: f32, t1: f32) -> BVHNode {
+        let mut objects = objects.clone();
+
         let mut root = BVHNode::new();
 
         let mut rng = rand::thread_rng();
 
         let axis = rng.gen_range(0..2);
 
-        let comparator = |a, b| BVHNode::box_compare(a, b, axis);
-
         let span = objects.len();
 
         if span == 1 {
             root.left = objects[0].clone();
             root.right = root.left.clone();
-        } else {            objects.sort_unstable_by(comparator);
+        } else if span == 2 {
+            let result = BVHNode::box_compare(&objects[0], &objects[1], axis);
+
+            match result {
+                Ordering::Less => {
+                    root.left = objects[0].clone();
+                    root.right = objects[1].clone();
+                },
+                _ => {
+                    root.right = objects[0].clone();
+                    root.left = objects[1].clone();
+                }
+            }
+        } else {            
+            
+            objects.sort_unstable_by(|a,b| BVHNode::box_compare(a, b, axis));
 
             let mid = span / 2;
             root.left = Rc::new(BVHNode::from_vector(objects[..mid].to_vec(), t0, t1));
@@ -70,8 +86,21 @@ impl BVHNode {
         return root;
     }
 
-    fn box_compare(a: Rc<dyn Hittable>, b: Rc<dyn Hittable>, axis: usize) -> bool {
-        return false;
+    fn box_compare(a: &Rc<dyn Hittable>, b: &Rc<dyn Hittable>, axis: usize) -> std::cmp::Ordering {
+        
+        let mut box_a = AABB::new();
+        a.bounding_box(0.0, 0.0, &mut box_a);
+
+        let mut box_b = AABB::new();
+        b.bounding_box(0.0, 0.0, &mut box_b);
+
+        if box_a.min[axis] < box_b.min[axis] {
+            return Ordering::Less;
+        } else if box_a.min[axis] > box_b.min[axis] {
+            return Ordering::Greater;
+        } else {
+            return Ordering::Equal;
+        }
     }
 }
 
@@ -83,8 +112,8 @@ impl Hittable for BVHNode {
 
         let hit_left = self.left.intersect(ray, t_min, t_max, record);
 
-        let mut hit_right: bool;
-         {
+        let hit_right: bool;
+        {
             let mut t_max = t_max; 
             if hit_left {
                 t_max = record.t;
@@ -96,7 +125,7 @@ impl Hittable for BVHNode {
         return hit_left || hit_right;
     }
 
-    fn bounding_box(&self, t0: f32, t1: f32, aabb: &mut AABB) -> bool {
+    fn bounding_box(&self, _t0: f32, _t1: f32, aabb: &mut AABB) -> bool {
         *aabb = self.bounding_box;
         return true;
     }

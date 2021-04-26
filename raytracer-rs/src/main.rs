@@ -12,6 +12,7 @@ mod bvh_node;
 
 use std::fs::File;
 use std::io::Write;
+use std::time::Instant;
 
 use ray::Ray;
 use vec3::Vec3;
@@ -21,6 +22,7 @@ use camera::Camera;
 use rand::prelude::*;
 use materials::*;
 use hit_record::*;
+use bvh_node::BVHNode;
 
 
 fn write_color(color: &Vec3, samples_per_pixel: f32) -> String {
@@ -103,14 +105,9 @@ pub fn generate_random_world() -> Scene {
 }
 
 fn main() {
-    // let mut world = Scene::new();
-    // world.add_sphere(&Vec3{x: 0.0, y: -100.5, z: -1.0}, 100.0, LambertianMat::new(Vec3{x: 0.8, y: 0.8, z: 0.0}));
-    // world.add_sphere(&Vec3{x: 0.0, y: 0.0, z: -1.0}, 0.5, LambertianMat::new(Vec3{x: 0.1, y: 0.2, z: 0.5}));
-    // world.add_sphere(&Vec3{x:-1.0, y: 0.0, z: -1.0}, 0.5, DielectricMat::new(1.5));
-    // world.add_sphere(&Vec3{x:-1.0, y: 0.0, z: -1.0},-0.45, DielectricMat::new(1.5));
-    // world.add_sphere(&Vec3{x: 1.0, y: 0.0, z: -1.0}, 0.5, MetalMat::new(Vec3{x: 0.8, y: 0.6, z: 0.2}, 0.0));
     
     let world = generate_random_world();
+    let bvh = BVHNode::from_scene(&world, 0.0, 1.0);
 
     // TODO: get dimensions from CLI
     // Image
@@ -134,6 +131,7 @@ fn main() {
 
     file.write_all(image_header.as_bytes()).expect("Could not write image header");
 
+    let now = Instant::now();
     for j in 0..image_height {
         for i in 0..image_width {
             let mut sample = 0;
@@ -144,11 +142,12 @@ fn main() {
 
                 let r = camera.get_ray(u, v);
 
-                color += ray_color(&r, &world, max_depth);
+                color += ray_color(&r, &bvh, max_depth);
                 sample += 1;
             }
             let color_string : String = write_color(&color, samples_per_pixel as f32); 
             file.write_all(color_string.as_bytes()).expect("Couldn't write color");
         }
     }
+    println!("Time elapsed: {}", now.elapsed().as_millis());
 }
