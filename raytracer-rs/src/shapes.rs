@@ -2,11 +2,13 @@ use crate::vec3::Vec3;
 use crate::ray::Ray;
 use crate::hit_record::HitRecord;
 use crate::materials::Material;
+use crate::aabb::AABB;
 
 use std::rc::Rc;
 
 pub trait Hittable {
     fn intersect(&self, ray: &Ray, t_min: f32, t_max: f32, record: &mut HitRecord) -> bool;
+    fn bounding_box(&self, t0: f32, t1: f32, aabb: &mut AABB) -> bool;
 }
 
 #[derive(Clone)]
@@ -17,11 +19,11 @@ pub struct Sphere {
 }
 
 impl Sphere {
-    pub fn new<T: 'static + Material>(center: Vec3, radius: f32, material: &T) -> Sphere {
+    pub fn new<T: 'static + Material>(center: Vec3, radius: f32, material: T) -> Sphere {
         Sphere {
             center: center,
             radius: radius,
-            material: Rc::new(*material)
+            material: Rc::new(material)
         }
     }
 }
@@ -65,6 +67,15 @@ impl Hittable for Sphere {
 
         return true;
     }
+
+    fn bounding_box(&self, _t0: f32, _t1: f32, aabb: &mut AABB) -> bool {
+        let offset = Vec3{ x: self.radius, y: self.radius, z: self.radius };
+        *aabb = AABB {
+            min: self.center - offset,
+            max: self.center + offset
+        };
+        return true;
+    }
 }
 
 #[derive(Clone)]
@@ -78,14 +89,14 @@ pub struct MovingSphere {
 }
 
 impl MovingSphere {
-    pub fn new<T: 'static + Material>(center_start: Vec3, center_end: Vec3, radius: f32, time_start: f32, time_end: f32, material: &T) -> MovingSphere {
+    pub fn new<T: 'static + Material>(center_start: Vec3, center_end: Vec3, radius: f32, time_start: f32, time_end: f32, material: T) -> MovingSphere {
         MovingSphere {
             center_start: center_start,
             center_end: center_end,
             time_start: time_start,
             time_end: time_end,
             radius: radius,
-            material: Rc::new(*material)
+            material: Rc::new(material)
         }
     }
 
@@ -130,6 +141,23 @@ impl Hittable for MovingSphere {
         };
 
         record.set_face_normal(&ray, &outward_normal);
+
+        return true;
+    }
+
+    fn bounding_box(&self, t0: f32, t1: f32, aabb: &mut AABB) -> bool {
+        let offset = Vec3{ x: self.radius, y: self.radius, z: self.radius };
+        let start = AABB {
+            min: self.center(t0) - offset,
+            max: self.center(t0) + offset
+        };
+
+        let end = AABB {
+            min: self.center(t1) - offset,
+            max: self.center(t1) + offset
+        };
+
+        *aabb = AABB::surrounding_box(&start, &end);
 
         return true;
     }

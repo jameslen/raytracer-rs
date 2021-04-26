@@ -285,3 +285,16 @@ impl ops::Neg for &Vec3 {
         Vec3{ x: -self.x, y: -self.y, z: -self.z}
     }
 }
+
+impl ops::Index<usize> for Vec3 {
+    type Output = f32;
+
+    fn index(&self, index: usize) -> &f32 {
+        match index {
+            0 => &self.x,
+            1 => &self.y,
+            2 => &self.z,
+            _ => panic!("What?")
+        }
+    }
+}

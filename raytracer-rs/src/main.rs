@@ -7,6 +7,7 @@ mod scene;
 mod camera;
 mod materials;
 mod hit_record;
+mod aabb;
 
 use std::fs::File;
 use std::io::Write;
@@ -60,7 +61,7 @@ pub fn generate_random_world() -> Scene {
     let mut s = Scene::new();
 
     // Ground
-    s.add_shape(&Sphere::new(Vec3{x: 0.0, y: -1000.0, z: 0.0}, 1000.0, &LambertianMat::new(Vec3{x: 0.5, y: 0.5, z: 0.5})));
+    s.add_shape(Sphere::new(Vec3{x: 0.0, y: -1000.0, z: 0.0}, 1000.0, LambertianMat::new(Vec3{x: 0.5, y: 0.5, z: 0.5})));
     
     let mut rng = rand::thread_rng();
 
@@ -83,19 +84,19 @@ pub fn generate_random_world() -> Scene {
             if (center - point).length() > 0.9 {
                 if choose_mat < 0.8 {
                     let center2 = center + Vec3{ x: 0.0, y: rng.gen_range(0.0..0.5), z: 0.0 };
-                    s.add_shape(&MovingSphere::new(center, center2, 0.0, 1.0, 0.2, &LambertianMat::new(Vec3::random() * Vec3::random())));
+                    s.add_shape(MovingSphere::new(center, center2, 0.2, 0.0, 1.0, LambertianMat::new(Vec3::random() * Vec3::random())));
                 } else if choose_mat < 0.95 {
-                    s.add_shape(&Sphere::new(center, 0.2, &MetalMat::new(Vec3::random_range(0.5,1.0), rng.gen_range(0.5..1.0))));
+                    s.add_shape(Sphere::new(center, 0.2, MetalMat::new(Vec3::random_range(0.5,1.0), rng.gen_range(0.5..1.0))));
                 } else {
-                    s.add_shape(&Sphere::new(center, 0.2, &DielectricMat::new(1.5)));
+                    s.add_shape(Sphere::new(center, 0.2, DielectricMat::new(1.5)));
                 }
             }
         }
     }
 
-    s.add_shape(&Sphere::new(Vec3{x: 0.0, y: 1.0, z: 0.0}, 1.0, &DielectricMat::new(1.5)));
-    s.add_shape(&Sphere::new(Vec3{x:-4.0, y: 1.0, z: 0.0}, 1.0, &LambertianMat::new(Vec3{x: 0.4, y: 0.2, z: 0.1})));
-    s.add_shape(&Sphere::new(Vec3{x: 4.0, y: 1.0, z: 0.0}, 1.0, &MetalMat::new(Vec3{x:0.7, y: 0.6, z: 0.5}, 0.0)));
+    s.add_shape(Sphere::new(Vec3{x: 0.0, y: 1.0, z: 0.0}, 1.0, DielectricMat::new(1.5)));
+    s.add_shape(Sphere::new(Vec3{x:-4.0, y: 1.0, z: 0.0}, 1.0, LambertianMat::new(Vec3{x: 0.4, y: 0.2, z: 0.1})));
+    s.add_shape(Sphere::new(Vec3{x: 4.0, y: 1.0, z: 0.0}, 1.0, MetalMat::new(Vec3{x:0.7, y: 0.6, z: 0.5}, 0.0)));
 
     return s;
 }

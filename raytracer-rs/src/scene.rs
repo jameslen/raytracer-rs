@@ -1,8 +1,9 @@
 use crate::shapes::*;
-//use crate::vec3::Vec3;
+use crate::vec3::Vec3;
 use crate::ray::Ray;
 //use crate::materials::Material;
 use crate::hit_record::HitRecord;
+use crate::aabb::AABB;
 
 use std::rc::Rc;
 
@@ -15,8 +16,8 @@ impl Scene {
         Scene{ shapes: Vec::new() }
     }
 
-    pub fn add_shape<S: 'static + Hittable>(&mut self, shape: &S) {
-        self.shapes.push(Rc::new(*shape));
+    pub fn add_shape<S: 'static + Hittable>(&mut self, shape: S) {
+        self.shapes.push(Rc::new(shape));
     }
 
     pub fn clear(&mut self) {
@@ -37,5 +38,41 @@ impl Hittable for Scene {
         }
 
         return hit_anything;
+    }
+
+    fn bounding_box(&self, t0: f32, t1: f32, aabb: &mut AABB) -> bool {
+        if self.shapes.is_empty() {
+            return false;
+        }
+        let mut first_box = true;
+
+        for shape in self.shapes.iter() {
+            let mut temp = AABB {
+                min: Vec3{
+                    x: -f32::INFINITY,
+                    y: -f32::INFINITY,
+                    z: -f32::INFINITY
+                },
+                max: Vec3{
+                    x: f32::INFINITY,
+                    y: f32::INFINITY,
+                    z: f32::INFINITY
+                }
+            };
+            
+            if shape.bounding_box(t0, t1, &mut temp) == false {
+                return false;
+            }
+
+            if first_box {
+                *aabb = temp;
+                first_box = false;
+            } else {
+                *aabb = AABB::surrounding_box(&temp, aabb);
+            }
+        }
+
+        return true;
+
     }
 }
