@@ -13,11 +13,11 @@ struct EmptyHittable {
 }
 
 impl Hittable for EmptyHittable {
-    fn intersect(&self, _ray: &Ray, _t_min: f32, _t_max: f32, _record: &mut HitRecord) -> bool {
-        return false;
+    fn intersect(&self, _ray: &Ray, _t_min: f32, _t_max: f32) -> Option<HitRecord> {
+        return Option::None;
     }
-    fn bounding_box(&self, _t0: f32, _t1: f32, _aabb: &mut AABB) -> bool {
-        return false;
+    fn bounding_box(&self, _t0: f32, _t1: f32) -> Option<AABB> {
+        return None;
     }
 }
 
@@ -78,8 +78,12 @@ impl BVHNode {
         let mut left_aabb = AABB::new();
         let mut right_aabb = AABB::new();
 
-        root.left.bounding_box(t0, t1, &mut left_aabb);
-        root.right.bounding_box(t0, t1, &mut right_aabb);
+        if let Some(aabb) = root.left.bounding_box(t0, t1) {
+            left_aabb = aabb;
+        }
+        if let Some(aabb) = root.right.bounding_box(t0, t1) {
+            right_aabb = aabb;
+        }
 
         root.bounding_box = AABB::surrounding_box(&left_aabb, &right_aabb);
 
@@ -89,10 +93,14 @@ impl BVHNode {
     fn box_compare(a: &Rc<dyn Hittable>, b: &Rc<dyn Hittable>, axis: usize) -> std::cmp::Ordering {
         
         let mut box_a = AABB::new();
-        a.bounding_box(0.0, 0.0, &mut box_a);
+        if let Some(aabb) = a.bounding_box(0.0, 0.0) {
+            box_a = aabb;
+        }
 
         let mut box_b = AABB::new();
-        b.bounding_box(0.0, 0.0, &mut box_b);
+        if let Some(aabb) = b.bounding_box(0.0, 0.0) {
+            box_b = aabb;
+        }
 
         if box_a.min[axis] < box_b.min[axis] {
             return Ordering::Less;
@@ -105,28 +113,28 @@ impl BVHNode {
 }
 
 impl Hittable for BVHNode {
-    fn intersect(&self, ray: &Ray, t_min: f32, t_max: f32, record: &mut HitRecord) -> bool {
+    fn intersect(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         if self.bounding_box.hit(ray, t_min, t_max) == false {
-            return false;
+            return Option::None;
         }
 
-        let hit_left = self.left.intersect(ray, t_min, t_max, record);
+        let mut t_max = t_max;
+        let mut left_result = self.left.intersect(ray, t_min, t_max);
 
-        let hit_right: bool;
-        {
-            let mut t_max = t_max; 
-            if hit_left {
-                t_max = record.t;
-            }
-
-            hit_right = self.right.intersect(ray, t_min, t_max, record);
+        if let Option::Some(left) = left_result {
+            t_max = left.t;
+            left_result = Option::Some(left);
         }
 
-        return hit_left || hit_right;
+        let right_result = self.right.intersect(ray, t_min, t_max);
+
+        match right_result {
+            Option::Some(_) => return right_result,
+            Option::None => return left_result
+        }
     }
 
-    fn bounding_box(&self, _t0: f32, _t1: f32, aabb: &mut AABB) -> bool {
-        *aabb = self.bounding_box;
-        return true;
+    fn bounding_box(&self, _t0: f32, _t1: f32) -> Option<AABB> {
+        return Some(self.bounding_box);
     }
 }

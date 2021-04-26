@@ -7,8 +7,8 @@ use crate::aabb::AABB;
 use std::rc::Rc;
 
 pub trait Hittable {
-    fn intersect(&self, ray: &Ray, t_min: f32, t_max: f32, record: &mut HitRecord) -> bool;
-    fn bounding_box(&self, t0: f32, t1: f32, aabb: &mut AABB) -> bool;
+    fn intersect(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord>;
+    fn bounding_box(&self, t0: f32, t1: f32) -> Option<AABB>;
 }
 
 #[derive(Clone)]
@@ -29,7 +29,7 @@ impl Sphere {
 }
 
 impl Hittable for Sphere {
-    fn intersect(&self, ray: &Ray, t_min: f32, t_max: f32, record: &mut HitRecord) -> bool {
+    fn intersect(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         let oc = ray.origin - self.center;
         let a = ray.direction.length_sq();
         let half_b = oc.dot(&ray.direction);
@@ -38,7 +38,7 @@ impl Hittable for Sphere {
         let discriminant = half_b * half_b - a * c;
 
         if discriminant < 0.0 {
-            return false;
+            return Option::None;
         }
 
         let sqrtd = discriminant.sqrt();
@@ -49,13 +49,13 @@ impl Hittable for Sphere {
             root = (-half_b + sqrtd) / a;
 
             if root < t_min || root > t_max {
-                return false;
+                return Option::None;
             }
         }
 
         let outward_normal = (ray.at(root) - self.center) / self.radius;
 
-        *record = HitRecord{
+        let mut record = HitRecord{
             t: root,
             point: ray.at(root),
             normal: outward_normal,
@@ -65,16 +65,15 @@ impl Hittable for Sphere {
 
         record.set_face_normal(&ray, &outward_normal);
 
-        return true;
+        return Option::Some(record);
     }
 
-    fn bounding_box(&self, _t0: f32, _t1: f32, aabb: &mut AABB) -> bool {
+    fn bounding_box(&self, _t0: f32, _t1: f32) -> Option<AABB> {
         let offset = Vec3{ x: self.radius, y: self.radius, z: self.radius };
-        *aabb = AABB {
+        return Option::Some(AABB {
             min: self.center - offset,
             max: self.center + offset
-        };
-        return true;
+        });
     }
 }
 
@@ -106,7 +105,7 @@ impl MovingSphere {
 }
 
 impl Hittable for MovingSphere {
-    fn intersect(&self, ray: &Ray, t_min: f32, t_max: f32, record: &mut HitRecord) -> bool {
+    fn intersect(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         let oc = ray.origin - self.center(ray.time);
         let a = ray.direction.length_sq();
         let half_b = oc.dot(&ray.direction);
@@ -115,7 +114,7 @@ impl Hittable for MovingSphere {
         let discriminant = half_b * half_b - a * c;
 
         if discriminant < 0.0 {
-            return false;
+            return Option::None;
         }
 
         let sqrtd = discriminant.sqrt();
@@ -126,13 +125,13 @@ impl Hittable for MovingSphere {
             root = (-half_b + sqrtd) / a;
 
             if root < t_min || root > t_max {
-                return false;
+                return Option::None;
             }
         }
 
         let outward_normal = (ray.at(root) - self.center(ray.time)) / self.radius;
 
-        *record = HitRecord{
+        let mut record = HitRecord{
             t: root,
             point: ray.at(root),
             normal: outward_normal,
@@ -142,10 +141,10 @@ impl Hittable for MovingSphere {
 
         record.set_face_normal(&ray, &outward_normal);
 
-        return true;
+        return Option::Some(record);
     }
 
-    fn bounding_box(&self, t0: f32, t1: f32, aabb: &mut AABB) -> bool {
+    fn bounding_box(&self, t0: f32, t1: f32) -> Option<AABB> {
         let offset = Vec3{ x: self.radius, y: self.radius, z: self.radius };
         let start = AABB {
             min: self.center(t0) - offset,
@@ -157,27 +156,6 @@ impl Hittable for MovingSphere {
             max: self.center(t1) + offset
         };
 
-        *aabb = AABB::surrounding_box(&start, &end);
-
-        return true;
+        return Some(AABB::surrounding_box(&start, &end))
     }
 }
-
-// pub struct AxisAlignedBox {
-//     pub position: Vec3,
-//     pub width: f32,  // X dimension
-//     pub height: f32, // Y dimension
-//     pub depth: f32,  // Z dimension
-// }
-
-// pub struct Plane {
-//     pub normal: Vec3,
-//     pub distance: f32
-// }
-
-// pub struct Triangle {
-//     pub p1: Vec3,
-//     pub p2: Vec3,
-//     pub p3: Vec3,
-//     pub normal: Vec3
-// }

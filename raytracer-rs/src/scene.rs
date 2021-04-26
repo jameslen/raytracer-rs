@@ -1,9 +1,8 @@
 use crate::shapes::Hittable;
-use crate::vec3::Vec3;
 use crate::ray::Ray;
 //use crate::materials::Material;
-use crate::hit_record::HitRecord;
 use crate::aabb::AABB;
+use crate::hit_record::HitRecord;
 
 use std::rc::Rc;
 
@@ -26,53 +25,46 @@ impl Scene {
 }
 
 impl Hittable for Scene {
-    fn intersect(&self, ray: &Ray, t_min: f32, t_max: f32, record: &mut HitRecord) -> bool {
-        let mut hit_anything = false;
+    fn intersect(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         let mut closest_so_far = t_max;
+
+        let mut scene_result = Option::None;
         
         for shape in self.shapes.iter() {
-            if shape.intersect(ray, t_min, closest_so_far, record) == true {
-                hit_anything = true;
-                closest_so_far = record.t;
+            let result = shape.intersect(ray, t_min, closest_so_far);
+            if let Option::Some(hit_record) = result {
+                closest_so_far = hit_record.t;
+                scene_result = Option::Some(hit_record);
             }
         }
 
-        return hit_anything;
+        return scene_result;
     }
 
-    fn bounding_box(&self, t0: f32, t1: f32, aabb: &mut AABB) -> bool {
+    fn bounding_box(&self, t0: f32, t1: f32) -> Option<AABB> {
         if self.shapes.is_empty() {
-            return false;
+            return None;
         }
         let mut first_box = true;
+        let mut result = AABB::new();
 
         for shape in self.shapes.iter() {
-            let mut temp = AABB {
-                min: Vec3{
-                    x: -f32::INFINITY,
-                    y: -f32::INFINITY,
-                    z: -f32::INFINITY
-                },
-                max: Vec3{
-                    x: f32::INFINITY,
-                    y: f32::INFINITY,
-                    z: f32::INFINITY
-                }
-            };
+            let temp: AABB;
 
-            if shape.bounding_box(t0, t1, &mut temp) == false {
-                return false;
+            if let Some(aabb) = shape.bounding_box(t0, t1) {
+                temp = aabb;
+            } else {
+                return None;
             }
 
             if first_box {
-                *aabb = temp;
+                result = temp;
                 first_box = false;
             } else {
-                *aabb = AABB::surrounding_box(&temp, aabb);
+                result = AABB::surrounding_box(&temp, &result);
             }
         }
 
-        return true;
-
+        return Some(result);
     }
 }

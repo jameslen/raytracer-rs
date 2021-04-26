@@ -21,7 +21,6 @@ use shapes::*;
 use camera::Camera;
 use rand::prelude::*;
 use materials::*;
-use hit_record::*;
 use bvh_node::BVHNode;
 
 
@@ -38,9 +37,9 @@ fn ray_color(ray: &Ray, world: &dyn Hittable, depth: i32) -> Vec3 {
     if depth <= 0 {
         return Vec3{ x: 0.0, y: 0.0, z: 0.0 };
     }
-    let mut record = HitRecord::new();
 
-    if world.intersect(ray, 0.005, f32::INFINITY, &mut record) == true {
+    let world_result = world.intersect(ray, 0.005, f32::INFINITY);
+    if let Option::Some(record) = world_result {
         let mut scattered = Ray{ origin: Vec3{ x: 0.0, y: 0.0, z: 0.0 }, direction: Vec3{ x: 0.0, y: 0.0, z: 0.0 }, time: ray.time };
         let mut attentuation = Vec3{ x: 1.0, y: 1.0, z: 1.0 };
 
@@ -134,16 +133,14 @@ fn main() {
     let now = Instant::now();
     for j in 0..image_height {
         for i in 0..image_width {
-            let mut sample = 0;
             let mut color = Vec3{ x: 0.0, y: 0.0, z: 0.0 };
-            while sample < samples_per_pixel {
+            for _sample in 0..samples_per_pixel {
                 let u = (i as f32 + rng.gen::<f32>()) / (image_width - 1) as f32;
                 let v = ((image_height - 1 - j) as f32 + rng.gen::<f32>()) / (image_height - 1) as f32;
 
                 let r = camera.get_ray(u, v);
 
                 color += ray_color(&r, &bvh, max_depth);
-                sample += 1;
             }
             let color_string : String = write_color(&color, samples_per_pixel as f32); 
             file.write_all(color_string.as_bytes()).expect("Couldn't write color");
