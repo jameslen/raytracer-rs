@@ -135,9 +135,6 @@ enum SceneType {
 }
 
 fn main() {
-    
-    let world = generate_random_world();
-    
 
     // TODO: get dimensions from CLI
     // Image
