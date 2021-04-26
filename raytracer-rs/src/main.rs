@@ -8,6 +8,7 @@ mod camera;
 mod materials;
 mod hit_record;
 mod aabb;
+mod bvh_node;
 
 use std::fs::File;
 use std::io::Write;

@@ -1,4 +1,4 @@
-use crate::shapes::*;
+use crate::shapes::Hittable;
 use crate::vec3::Vec3;
 use crate::ray::Ray;
 //use crate::materials::Material;
@@ -8,7 +8,7 @@ use crate::aabb::AABB;
 use std::rc::Rc;
 
 pub struct Scene {
-    shapes: Vec<Rc<dyn Hittable>>
+    pub shapes: Vec<Rc<dyn Hittable>>
 }
 
 impl Scene {
@@ -59,7 +59,7 @@ impl Hittable for Scene {
                     z: f32::INFINITY
                 }
             };
-            
+
             if shape.bounding_box(t0, t1, &mut temp) == false {
                 return false;
             }

@@ -1,12 +1,28 @@
 use crate::vec3::Vec3;
 use crate::ray::Ray;
 
+#[derive(Copy, Clone)]
 pub struct AABB {
     pub min: Vec3,
     pub max: Vec3
 }
 
 impl AABB {
+    pub fn new() -> AABB {
+        AABB {
+            min: Vec3 {
+                x: f32::INFINITY,
+                y: f32::INFINITY,
+                z: f32::INFINITY
+            },
+            max: Vec3 {
+                x: -f32::INFINITY,
+                y: -f32::INFINITY,
+                z: -f32::INFINITY
+            }
+        }
+    }
+
     pub fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> bool {
         let mut t_min = t_min;
         let mut t_max = t_max;
