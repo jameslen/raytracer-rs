@@ -3,12 +3,20 @@ use crate::ray::Ray;
 use crate::hit_record::HitRecord;
 use crate::materials::Material;
 use crate::aabb::AABB;
+use crate::texture::*;
 
 use std::rc::Rc;
 
 pub trait Hittable {
     fn intersect(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord>;
     fn bounding_box(&self, t0: f32, t1: f32) -> Option<AABB>;
+}
+
+fn get_sphere_uv(point: Vec3) -> (f32, f32) {
+    let theta = f32::acos(-point.y);
+    let phi = f32::atan2(-point.z, point.x) + std::f32::consts::PI;
+
+    (phi / (2.0 * std::f32::consts::PI), theta / std::f32::consts::PI)
 }
 
 #[derive(Clone)]
@@ -53,13 +61,15 @@ impl Hittable for Sphere {
             }
         }
 
-        let outward_normal = (ray.at(root) - self.center) / self.radius;
+        let point = ray.at(root);
+        let outward_normal = (point - self.center) / self.radius;
 
         let mut record = HitRecord{
             t: root,
-            point: ray.at(root),
+            point: point,
             normal: outward_normal,
             material: self.material.clone(),
+            tex_coords: get_sphere_uv(point),
             front_face: true
         };
 
@@ -129,13 +139,15 @@ impl Hittable for MovingSphere {
             }
         }
 
-        let outward_normal = (ray.at(root) - self.center(ray.time)) / self.radius;
+        let point = ray.at(root);
+        let outward_normal = (point - self.center(ray.time)) / self.radius;
 
         let mut record = HitRecord{
             t: root,
             point: ray.at(root),
             normal: outward_normal,
             material: self.material.clone(),
+            tex_coords: get_sphere_uv(point),
             front_face: true
         };
 

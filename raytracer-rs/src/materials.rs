@@ -1,20 +1,35 @@
 use crate::vec3::Vec3;
 use crate::ray::Ray;
 use crate::hit_record::HitRecord;
+use crate::texture::*;
+
+use std::rc::Rc;
 
 pub trait Material {
     fn scatter(&self, ray: &Ray, record: &HitRecord, attentuation: &mut Vec3, scattered: &mut Ray) -> bool;
 }
 
-#[derive(Copy, Clone)]
+#[derive(Clone)]
 pub struct LambertianMat {
-    albedo: Vec3
+    albedo: Rc<dyn Texture>
 }
 
 impl LambertianMat {
-    pub fn new(albedo: Vec3) -> Self {
+    pub fn from_texture<T: 'static + Texture>(albedo: T) -> Self {
         LambertianMat{
-            albedo: albedo
+            albedo: Rc::new(albedo)
+        }
+    }
+
+    pub fn from_shared_texture(albedo: Rc<dyn Texture>) -> Self {
+        LambertianMat {
+            albedo: albedo.clone()
+        }
+    }
+
+    pub fn from_color(albedo: Vec3) -> Self {
+        LambertianMat{
+            albedo: Rc::new(SolidColor{color: albedo})
         }
     }
 }
@@ -32,7 +47,7 @@ impl Material for LambertianMat {
             direction: scatter,
             time: _ray.time
         };
-        *attentuation = self.albedo;
+        *attentuation = self.albedo.value(record.tex_coords, record.point);
         return true;
     }
 }
