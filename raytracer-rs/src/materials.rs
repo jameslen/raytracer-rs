@@ -31,7 +31,7 @@ impl LambertianMat {
 
     pub fn from_shared_texture(albedo: Rc<dyn Texture>) -> Self {
         LambertianMat {
-            albedo: albedo.clone()
+            albedo: albedo
         }
     }
 

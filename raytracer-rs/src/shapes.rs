@@ -40,8 +40,8 @@ impl<T: Hittable> TransformedObject<T> {
 
     fn generate_aabb(object: &T, transform: Mat4) -> AABB {
         let base_aabb = object.bounding_box(0.0, 1.0).unwrap();
-        let min = transform.transform_vector3a(base_aabb.min);
-        let max = transform.transform_vector3a(base_aabb.max);
+        let min = transform.transform_point3a(base_aabb.min);
+        let max = transform.transform_point3a(base_aabb.max);
 
         AABB{
             min: min.min(max),
@@ -52,7 +52,25 @@ impl<T: Hittable> TransformedObject<T> {
 
 impl<T: Hittable> Hittable for TransformedObject<T> {
     fn intersect(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
-        let local_ray
+        let local_ray = Ray{ 
+            origin: self.inv_transform.transform_point3a(ray.origin), 
+            direction: self.inv_transform.transform_vector3a(ray.direction),
+            time: ray.time
+        };
+
+        let result = self.object.intersect(&local_ray, t_min, t_max);
+
+        if let Some(record) = result {
+            return Some(HitRecord{
+                point: self.transform.transform_point3a(record.point),
+                t: record.t,
+                normal: self.transform.transform_vector3a(record.normal).normalize(),
+                material: record.material,
+                tex_coords: record.tex_coords,
+                front_face: record.front_face
+            })
+        }
+
         return None;
     }
 
@@ -375,6 +393,83 @@ impl Hittable for YZRect {
         Some(AABB {
             min: Vec3A::new(self.offset - 0.0001, self.min.x, self.min.y),
             max: Vec3A::new(self.offset + 0.0001, self.max.x, self.max.y),
+        })
+    }
+}
+
+pub struct Box {
+    min: Vec3A,
+    max: Vec3A,
+    pub material: Rc::<dyn Material>
+}
+
+impl Box {
+    pub fn new<T: 'static + Material>(width: f32, height: f32, depth: f32, material: T) -> Self {
+        Box{ 
+            min: Vec3A::ZERO,
+            max: Vec3A::new(width, height, depth),
+            material: Rc::new(material)
+        }
+    }
+}
+
+fn axis_min(first: (f32, usize), second: (f32, usize)) -> (f32, usize) {
+    if first.0 < second.0 {
+        return first;
+    } else {
+        return second;
+    }
+}
+
+fn axis_max(first: (f32, usize), second: (f32, usize)) -> (f32, usize) {
+    if first.0 > second.0 {
+        return first;
+    } else {
+        return second;
+    }
+}
+
+impl Hittable for Box {
+    fn intersect(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
+        let recip = ray.direction.recip();
+        let min = (self.min - ray.origin) * recip;
+        let max = (self.max - ray.origin) * recip;
+
+        let (t_min, min_axis) = axis_max(axis_max(axis_min((min.x, 0), (max.x, 1)), axis_min((min.y, 2), (max.y, 3))), axis_min((min.z, 4), (max.z, 5)));
+        let (t_max, max_axis) = axis_min(axis_min(axis_max((min.x, 0), (max.x, 1)), axis_max((min.y, 2), (max.y, 3))), axis_max((min.z, 4), (max.z, 5)));
+
+        if t_max < 0.0 || t_min > t_max {
+            return None;
+        }
+        
+        let normal = match min_axis {
+            0 => -Vec3A::X,
+            1 =>  Vec3A::X,
+            2 => -Vec3A::Y,
+            3 =>  Vec3A::Y,
+            4 => -Vec3A::Z,
+            5 =>  Vec3A::Z,
+            _ =>  Vec3A::ZERO
+        };
+
+        let mut record = HitRecord{
+            t: t_min,
+            point: ray.at(t_min),
+            tex_coords: (0.0, 0.0), // TODO: Impl tex coords
+            normal: normal,
+            material: self.material.clone(),
+            front_face: true
+        };
+
+        record.set_face_normal(ray, &normal);
+
+        return Some(record);
+    }
+
+    fn bounding_box(&self, _t0: f32, _t1: f32) -> Option<AABB> {
+        Some(AABB{
+            min: self.min,
+            max: self.max
         })
     }
 }

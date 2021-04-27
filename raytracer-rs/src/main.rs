@@ -137,9 +137,9 @@ fn earth() -> Scene {
     let mut s = Scene::new();
 
     let texture = Rc::new(ImageTexture::new(String::from("earthmap.jpg")));
-    let surface = LambertianMat::from_shared_texture(texture.clone());
+    let surface = LambertianMat::from_shared_texture(texture);
     
-    s.add_shape(Sphere::new(Vec3A::ZERO, 2.0, surface.clone()));
+    s.add_shape(Sphere::new(Vec3A::ZERO, 2.0, surface));
 
     return s;
 }
@@ -173,6 +173,20 @@ fn cornell_box() -> Scene {
     s.add_shape(XYRect::new(Vec2::new(0.0, 0.0), Vec2::new(555.0, 555.0), 555.0, LambertianMat::from_color(white)));
 
     s.add_shape(XZRect::new(Vec2::new(213.0, 227.0), Vec2::new(343.0, 332.0), 554.0, DiffuseLight::from_color(light)));
+
+    let b1 = Box::new(165.0, 330.0, 165.0, LambertianMat::from_color(white));
+    let rotation = Mat4::from_rotation_y(degree_to_rad(15.0));
+    let translation = Mat4::from_translation(Vec3::new(265.0, 0.0, 295.0));
+    let final_transform = translation * rotation;
+
+    s.add_shape(TransformedObject::new(b1, final_transform));
+
+    let b2 = Box::new(165.0, 165.0, 165.0, LambertianMat::from_color(white));
+    let rotation = Mat4::from_rotation_y(degree_to_rad(-18.0));
+    let translation = Mat4::from_translation(Vec3::new(130.0, 0.0, 65.0));
+    let final_transform = translation * rotation;
+
+    s.add_shape(TransformedObject::new(b2, final_transform));
 
     return s;
 }
@@ -286,7 +300,6 @@ fn main() {
             background = Vec3A::ZERO;
         }
     }
-    
 
     let mut rng = rand::thread_rng();
 
