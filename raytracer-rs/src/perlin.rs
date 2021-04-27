@@ -21,8 +21,6 @@ impl Perlin {
         let mut rand_vec = Vec::<Vec3A>::new();
         rand_vec.reserve(POINT_COUNT);
 
-        let mut rng = rand::thread_rng();
-
         for _ in 0..POINT_COUNT {
             rand_vec.push(vec3_helpers::random_range(-1.0, 1.0));
         }
@@ -46,9 +44,9 @@ impl Perlin {
     }
 
     pub fn noise(&self, point: Vec3A) -> f32 {
-        let mut u = point.x - point.x.floor();
-        let mut v = point.y - point.y.floor();
-        let mut w = point.z - point.z.floor();
+        let u = point.x - point.x.floor();
+        let v = point.y - point.y.floor();
+        let w = point.z - point.z.floor();
 
         let i = point.x.floor() as i32;
         let j = point.y.floor() as i32;

@@ -2,7 +2,6 @@ extern crate glam;
 extern crate image;
 
 use glam::*;
-use image::*;
 
 use crate::perlin::Perlin;
 

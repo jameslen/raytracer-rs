@@ -12,7 +12,7 @@ use glam::*;
 
 pub trait Material {
     fn scatter(&self, ray: &Ray, record: &HitRecord, attentuation: &mut Vec3A, scattered: &mut Ray) -> bool;
-    fn emittied(&self, _tex_coords: (f32, f32), _point: Vec3A) -> Vec3A {
+    fn emitted(&self, _tex_coords: (f32, f32), _point: Vec3A) -> Vec3A {
         Vec3A::ZERO
     }
 }
@@ -158,8 +158,19 @@ impl Material for NoMaterial {
     }
 }
 
-struct DiffuseLight {
+pub struct DiffuseLight {
     emit: Rc<dyn Texture>
+}
+
+impl DiffuseLight {
+    pub fn from_texture<T: 'static + Texture>(texture: T) -> Self {
+        DiffuseLight {
+            emit: Rc::new(texture)
+        }
+    }
+    pub fn from_color(color: Vec3A) -> Self {
+        DiffuseLight::from_texture(SolidColor{color:color})
+    }
 }
 
 impl Material for DiffuseLight {
@@ -167,7 +178,7 @@ impl Material for DiffuseLight {
         return false;
     }
 
-    fn emittied(&self, tex_coords: (f32, f32), point: Vec3A) -> Vec3A {
+    fn emitted(&self, tex_coords: (f32, f32), point: Vec3A) -> Vec3A {
         self.emit.value(tex_coords, point)
     }
 }

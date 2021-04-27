@@ -58,10 +58,10 @@ fn ray_color(ray: &Ray, background: Vec3A, world: &dyn Hittable, depth: i32) -> 
         return background;
     }
 
-    let normalized = ray.direction.normalize();
-    let t = 0.5_f32 * (normalized.y + 1.0);
+    // let normalized = ray.direction.normalize();
+    // let t = 0.5_f32 * (normalized.y + 1.0);
 
-    ((1.0 - t) * Vec3A::ONE) + (t * Vec3A::new(0.5, 0.7, 1.0))
+    // ((1.0 - t) * Vec3A::ONE) + (t * Vec3A::new(0.5, 0.7, 1.0))
 }
 
 fn degree_to_rad(deg: f32) -> f32 {
@@ -144,16 +144,52 @@ fn earth() -> Scene {
     return s;
 }
 
+fn simple_light() -> Scene {
+    let mut s = Scene::new();
+
+    let noise_texture = Rc::new(NoiseTexture::new(4.0));
+
+    s.add_shape(Sphere::new(Vec3A::new(0.0, -1000.0, 0.0), 1000.0, LambertianMat::from_shared_texture(noise_texture.clone())));
+    s.add_shape(Sphere::new(Vec3A::new(0.0, 2.0, 0.0), 2.0, LambertianMat::from_shared_texture(noise_texture.clone())));
+
+    s.add_shape(XYRect::new(Vec2::new(3.0, 1.0), Vec2::new(5.0, 3.0), -2.0, DiffuseLight::from_color(Vec3A::new(4.0, 4.0, 4.0))));
+    s.add_shape(Sphere::new(Vec3A::new(0.0, 7.0, 0.0), 2.0, DiffuseLight::from_color(Vec3A::new(4.0, 4.0, 4.0))));
+
+    return s;
+}
+
+fn cornell_box() -> Scene {
+    let mut s = Scene::new();
+
+    let white = Vec3A::new(0.73, 0.73, 0.73);
+    let green = Vec3A::new(0.12, 0.45, 0.15);
+    let red   = Vec3A::new(0.65, 0.05, 0.05);
+    let light = Vec3A::new(15.0, 15.0, 15.0);
+
+    s.add_shape(YZRect::new(Vec2::new(0.0, 0.0), Vec2::new(555.0, 555.0), 555.0, LambertianMat::from_color(green)));
+    s.add_shape(YZRect::new(Vec2::new(0.0, 0.0), Vec2::new(555.0, 555.0), 0.0, LambertianMat::from_color(red)));
+    s.add_shape(XZRect::new(Vec2::new(0.0, 0.0), Vec2::new(555.0, 555.0), 555.0, LambertianMat::from_color(white)));
+    s.add_shape(XZRect::new(Vec2::new(0.0, 0.0), Vec2::new(555.0, 555.0), 0.0, LambertianMat::from_color(white)));
+    s.add_shape(XYRect::new(Vec2::new(0.0, 0.0), Vec2::new(555.0, 555.0), 555.0, LambertianMat::from_color(white)));
+
+    s.add_shape(XZRect::new(Vec2::new(213.0, 227.0), Vec2::new(343.0, 332.0), 554.0, DiffuseLight::from_color(light)));
+
+    return s;
+}
+
 enum ImageQuality {
     Low,
-    High
+    High,
+    Cornell
 }
 
 enum SceneType {
     Random,
     TwoSpheres,
     PerlinSpheres,
-    Earth
+    Earth,
+    SimpleLight,
+    CornellBox
 }
 
 fn main() {
@@ -162,7 +198,6 @@ fn main() {
     // Image
     let aspect_ratio: f32;
     let image_width: u32;
-    let image_height: u32;
     let samples_per_pixel: u32;
     let max_depth: i32;
 
@@ -173,25 +208,33 @@ fn main() {
     let origin: Vec3A;
     let target: Vec3A;
 
-    let quality = ImageQuality::Low;
-    let scene = SceneType::Earth;
+    let background: Vec3A;
+
+    let quality = ImageQuality::Cornell;
+    let scene = SceneType::CornellBox;
 
     match quality {
         ImageQuality::Low => {
             aspect_ratio = 16.0 / 9.0;
             image_width = 400;
-            image_height = (image_width as f32 / aspect_ratio) as u32;
             samples_per_pixel = 100;
             max_depth = 50;
         },
         ImageQuality::High => {
             aspect_ratio = 3.0 / 2.0;
             image_width = 1600;
-            image_height = (image_width as f32 / aspect_ratio) as u32;
             samples_per_pixel = 500;
             max_depth = 50;
         }
+        ImageQuality::Cornell => {
+            aspect_ratio = 1.0;
+            image_width = 600;
+            samples_per_pixel = 200;
+            max_depth = 50;
+        }
     }
+
+    let image_height = (image_width as f32 / aspect_ratio) as u32;
 
     match scene {
         SceneType::Random => {
@@ -200,6 +243,7 @@ fn main() {
             target = Vec3A::new(0.0, 0.0, 0.0);
             fov = degree_to_rad(20.0);
             aperture = 0.1;
+            background = Vec3A::new(0.70, 0.80, 1.00);
         },
         SceneType::TwoSpheres => {
             world = two_spheres();
@@ -207,6 +251,7 @@ fn main() {
             target = Vec3A::new(0.0, 0.0, 0.0);
             fov = degree_to_rad(20.0);
             aperture = 0.0;
+            background = Vec3A::new(0.7, 0.8, 1.0);
         },
         SceneType::PerlinSpheres => {
             world = two_perlin_spheres();
@@ -214,6 +259,7 @@ fn main() {
             target = Vec3A::new(0.0, 0.0, 0.0);
             fov = degree_to_rad(20.0);
             aperture = 0.0;
+            background = Vec3A::new(0.70, 0.80, 1.00);
         },
         SceneType::Earth => {
             world = earth();
@@ -221,6 +267,23 @@ fn main() {
             target = Vec3A::new(0.0, 0.0, 0.0);
             fov = degree_to_rad(20.0);
             aperture = 0.0;
+            background = Vec3A::new(0.70, 0.80, 1.00);
+        },
+        SceneType::SimpleLight => {
+            world = simple_light();
+            origin = Vec3A::new(26.0, 3.0, 6.0);
+            target = Vec3A::new(0.0, 2.0, 0.0);
+            fov = degree_to_rad(20.0);
+            aperture = 0.0;
+            background = Vec3A::ZERO;
+        },
+        SceneType::CornellBox => {
+            world = cornell_box();
+            origin = Vec3A::new(278.0, 278.0, -800.0);
+            target = Vec3A::new(278.0, 278.0, 0.0);
+            fov = degree_to_rad(40.0);
+            aperture = 0.0;
+            background = Vec3A::ZERO;
         }
     }
     
@@ -245,7 +308,7 @@ fn main() {
 
             let r = camera.get_ray(u, v);
 
-            color += ray_color(&r, &bvh, max_depth);
+            color += ray_color(&r, background, &bvh, max_depth);
         }
 
         color *= inv_samples;

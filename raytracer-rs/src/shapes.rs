@@ -173,3 +173,168 @@ impl Hittable for MovingSphere {
         return Some(AABB::surrounding_box(&start, &end))
     }
 }
+
+pub struct XYRect {
+    min: Vec2,
+    max: Vec2,
+    offset: f32,
+    pub material: Rc::<dyn Material>
+}
+
+impl XYRect {
+    pub fn new<T: 'static + Material>(min: Vec2, max: Vec2, offset: f32, material: T) -> Self {
+        XYRect {
+            min: min,
+            max: max,
+            offset: offset,
+            material: Rc::new(material)
+        }
+    }
+}
+
+impl Hittable for XYRect {
+    fn intersect(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
+        let t = (self.offset - ray.origin.z) / ray.direction.z;
+
+        if t < t_min || t > t_max {
+            return None;
+        }
+
+        let x = ray.origin.x + t * ray.direction.x;
+        let y = ray.origin.y + t * ray.direction.y;
+
+        if x < self.min.x || x > self.max.x || y < self.min.y || y > self.max.y {
+            return None;
+        }
+
+        let mut record = HitRecord {
+            t: t,
+            point: ray.at(t),
+            tex_coords: ((x - self.min.x) / (self.max.x - self.min.x), (y - self.min.y) / (self.max.y - self.min.y)),
+            normal: Vec3A::Z,
+            material: self.material.clone(),
+            front_face: true
+        };
+
+        record.set_face_normal(ray, &Vec3A::Z);
+
+        return Some(record);
+    }
+
+    fn bounding_box(&self, t0: f32, t1: f32) -> Option<AABB> {
+        Some(AABB {
+            min: Vec3A::new(self.min.x, self.min.y, self.offset - 0.0001),
+            max: Vec3A::new(self.max.x, self.max.y, self.offset + 0.0001),
+        })
+    }
+}
+
+pub struct XZRect {
+    min: Vec2,
+    max: Vec2,
+    offset: f32,
+    pub material: Rc::<dyn Material>
+}
+
+impl XZRect {
+    pub fn new<T: 'static + Material>(min: Vec2, max: Vec2, offset: f32, material: T) -> Self {
+        XZRect {
+            min: min,
+            max: max,
+            offset: offset,
+            material: Rc::new(material)
+        }
+    }
+}
+
+impl Hittable for XZRect {
+    fn intersect(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
+        let t = (self.offset - ray.origin.y) / ray.direction.y;
+
+        if t < t_min || t > t_max {
+            return None;
+        }
+
+        let x = ray.origin.x + t * ray.direction.x;
+        let z = ray.origin.z + t * ray.direction.z;
+
+        if x < self.min.x || x > self.max.x || z < self.min.y || z > self.max.y {
+            return None;
+        }
+
+        let mut record = HitRecord {
+            t: t,
+            point: ray.at(t),
+            tex_coords: ((x - self.min.x) / (self.max.x - self.min.x), (z - self.min.y) / (self.max.y - self.min.y)),
+            normal: Vec3A::Y,
+            material: self.material.clone(),
+            front_face: true
+        };
+
+        record.set_face_normal(ray, &Vec3A::Y);
+
+        return Some(record);
+    }
+
+    fn bounding_box(&self, t0: f32, t1: f32) -> Option<AABB> {
+        Some(AABB {
+            min: Vec3A::new(self.min.x, self.offset - 0.0001, self.min.y),
+            max: Vec3A::new(self.max.x, self.offset + 0.0001, self.max.y),
+        })
+    }
+}
+
+pub struct YZRect {
+    min: Vec2,
+    max: Vec2,
+    offset: f32,
+    pub material: Rc::<dyn Material>
+}
+
+impl YZRect {
+    pub fn new<T: 'static + Material>(min: Vec2, max: Vec2, offset: f32, material: T) -> Self {
+        YZRect {
+            min: min,
+            max: max,
+            offset: offset,
+            material: Rc::new(material)
+        }
+    }
+}
+
+impl Hittable for YZRect {
+    fn intersect(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
+        let t = (self.offset - ray.origin.x) / ray.direction.x;
+
+        if t < t_min || t > t_max {
+            return None;
+        }
+
+        let x = ray.origin.y + t * ray.direction.y;
+        let y = ray.origin.z + t * ray.direction.z;
+
+        if x < self.min.x || x > self.max.x || y < self.min.y || y > self.max.y {
+            return None;
+        }
+
+        let mut record = HitRecord {
+            t: t,
+            point: ray.at(t),
+            tex_coords: ((x - self.min.x) / (self.max.x - self.min.x), (y - self.min.y) / (self.max.y - self.min.y)),
+            normal: Vec3A::X,
+            material: self.material.clone(),
+            front_face: true
+        };
+
+        record.set_face_normal(ray, &Vec3A::X);
+
+        return Some(record);
+    }
+
+    fn bounding_box(&self, _t0: f32, _t1: f32) -> Option<AABB> {
+        Some(AABB {
+            min: Vec3A::new(self.offset - 0.0001, self.min.x, self.min.y),
+            max: Vec3A::new(self.offset + 0.0001, self.max.x, self.max.y),
+        })
+    }
+}
