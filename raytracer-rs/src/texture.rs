@@ -95,7 +95,7 @@ impl ImageTexture {
 }
 
 impl Texture for ImageTexture {
-    fn value(&self, _coords: (f32, f32), point: Vec3A) -> Vec3A {
+    fn value(&self, _coords: (f32, f32), _point: Vec3A) -> Vec3A {
         let u = f32::clamp(_coords.0, 0.0, 1.0);
         let v = 1.0 - f32::clamp(_coords.1, 0.0, 1.0);
 

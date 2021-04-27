@@ -12,6 +12,9 @@ use glam::*;
 
 pub trait Material {
     fn scatter(&self, ray: &Ray, record: &HitRecord, attentuation: &mut Vec3A, scattered: &mut Ray) -> bool;
+    fn emittied(&self, _tex_coords: (f32, f32), _point: Vec3A) -> Vec3A {
+        Vec3A::ZERO
+    }
 }
 
 #[derive(Clone)]
@@ -152,5 +155,19 @@ impl Material for NoMaterial {
     fn scatter(&self, _ray: &Ray, _record: &HitRecord, _attentuation: &mut Vec3A, _scattered: &mut Ray) -> bool {
         println!("No Material");
         return false;
+    }
+}
+
+struct DiffuseLight {
+    emit: Rc<dyn Texture>
+}
+
+impl Material for DiffuseLight {
+    fn scatter(&self, _ray: &Ray, _record: &HitRecord, _attentuation: &mut Vec3A, _scattered: &mut Ray) -> bool {
+        return false;
+    }
+
+    fn emittied(&self, tex_coords: (f32, f32), point: Vec3A) -> Vec3A {
+        self.emit.value(tex_coords, point)
     }
 }

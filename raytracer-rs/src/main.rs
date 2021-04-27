@@ -38,7 +38,7 @@ use texture::*;
 //      (256.0 * f32::clamp(r,0.0, 0.999)) as u8, (256.0 * f32::clamp(g, 0.0, 0.999)) as u8, (256.0 * f32::clamp(b, 0.0, 0.999)) as u8);
 // }
 
-fn ray_color(ray: &Ray, world: &dyn Hittable, depth: i32) -> Vec3A {
+fn ray_color(ray: &Ray, background: Vec3A, world: &dyn Hittable, depth: i32) -> Vec3A {
     if depth <= 0 {
         return Vec3A::ZERO;
     }
@@ -47,11 +47,15 @@ fn ray_color(ray: &Ray, world: &dyn Hittable, depth: i32) -> Vec3A {
     if let Option::Some(record) = world_result {
         let mut scattered = Ray{ origin: Vec3A::ZERO, direction: Vec3A::ZERO, time: ray.time };
         let mut attentuation = Vec3A::ONE;
+        let emitted = record.material.emitted(record.tex_coords, record.point);
 
         if record.material.scatter(ray, &record, &mut attentuation, &mut scattered) {
-            return attentuation * ray_color(&scattered, world, depth - 1);
+            return emitted + attentuation * ray_color(&scattered, background, world, depth - 1);
+        } else {
+            return emitted;
         }
-        return Vec3A::ZERO;
+    } else {
+        return background;
     }
 
     let normalized = ray.direction.normalize();
