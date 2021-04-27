@@ -21,6 +21,46 @@ fn get_sphere_uv(point: Vec3A) -> (f32, f32) {
     (phi / (2.0 * std::f32::consts::PI), theta / std::f32::consts::PI)
 }
 
+pub struct TransformedObject<T: Hittable> {
+    object: T,
+    transform: Mat4,
+    inv_transform: Mat4,
+    aabb: AABB
+}
+
+impl<T: Hittable> TransformedObject<T> {
+    pub fn new(object: T, transform: Mat4) -> Self {
+        Self{
+            aabb: Self::generate_aabb(&object, transform),
+            object: object,
+            transform: transform,
+            inv_transform: transform.inverse()
+        }
+    }
+
+    fn generate_aabb(object: &T, transform: Mat4) -> AABB {
+        let base_aabb = object.bounding_box(0.0, 1.0).unwrap();
+        let min = transform.transform_vector3a(base_aabb.min);
+        let max = transform.transform_vector3a(base_aabb.max);
+
+        AABB{
+            min: min.min(max),
+            max: max.max(min)
+        }
+    }
+}
+
+impl<T: Hittable> Hittable for TransformedObject<T> {
+    fn intersect(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
+        let local_ray
+        return None;
+    }
+
+    fn bounding_box(&self, _t0: f32, _t1: f32) -> Option<AABB> {
+        return Some(self.aabb);
+    }
+}
+
 #[derive(Clone)]
 pub struct Sphere {
     pub center: Vec3A,
