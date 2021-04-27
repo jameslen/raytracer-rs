@@ -71,7 +71,7 @@ impl Hittable for Sphere {
             point: point,
             normal: outward_normal,
             material: self.material.clone(),
-            tex_coords: get_sphere_uv(point),
+            tex_coords: get_sphere_uv(outward_normal),
             front_face: true
         };
 
@@ -149,7 +149,7 @@ impl Hittable for MovingSphere {
             point: ray.at(root),
             normal: outward_normal,
             material: self.material.clone(),
-            tex_coords: get_sphere_uv(point),
+            tex_coords: get_sphere_uv(outward_normal),
             front_face: true
         };
 

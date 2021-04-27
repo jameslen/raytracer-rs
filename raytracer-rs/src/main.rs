@@ -129,6 +129,17 @@ fn two_perlin_spheres() -> Scene {
     return s;
 }
 
+fn earth() -> Scene {
+    let mut s = Scene::new();
+
+    let texture = Rc::new(ImageTexture::new(String::from("earthmap.jpg")));
+    let surface = LambertianMat::from_shared_texture(texture.clone());
+    
+    s.add_shape(Sphere::new(Vec3A::ZERO, 2.0, surface.clone()));
+
+    return s;
+}
+
 enum ImageQuality {
     Low,
     High
@@ -137,7 +148,8 @@ enum ImageQuality {
 enum SceneType {
     Random,
     TwoSpheres,
-    PerlinSpheres
+    PerlinSpheres,
+    Earth
 }
 
 fn main() {
@@ -158,7 +170,7 @@ fn main() {
     let target: Vec3A;
 
     let quality = ImageQuality::Low;
-    let scene = SceneType::Random;
+    let scene = SceneType::Earth;
 
     match quality {
         ImageQuality::Low => {
@@ -194,6 +206,13 @@ fn main() {
         },
         SceneType::PerlinSpheres => {
             world = two_perlin_spheres();
+            origin = Vec3A::new(13.0, 2.0, 3.0);
+            target = Vec3A::new(0.0, 0.0, 0.0);
+            fov = degree_to_rad(20.0);
+            aperture = 0.0;
+        },
+        SceneType::Earth => {
+            world = earth();
             origin = Vec3A::new(13.0, 2.0, 3.0);
             target = Vec3A::new(0.0, 0.0, 0.0);
             fov = degree_to_rad(20.0);

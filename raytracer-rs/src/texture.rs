@@ -1,6 +1,8 @@
 extern crate glam;
+extern crate image;
 
 use glam::*;
+use image::*;
 
 use crate::perlin::Perlin;
 
@@ -77,5 +79,41 @@ impl NoiseTexture {
 impl Texture for NoiseTexture {
     fn value(&self, _coords: (f32, f32), point: Vec3A) -> Vec3A {
         return Vec3A::new(0.5, 0.5, 0.5) * (1.0 + f32::sin(self.frequency * point.z + 10.0 * self.noise.turb(point, 7)));
+    }
+}
+
+pub struct ImageTexture {
+    image: image::RgbImage
+}
+
+impl ImageTexture {
+    pub fn new(path: String) -> Self {
+        ImageTexture {
+            image: image::open(path).unwrap().into_rgb8()
+        }
+    }
+}
+
+impl Texture for ImageTexture {
+    fn value(&self, _coords: (f32, f32), point: Vec3A) -> Vec3A {
+        let u = f32::clamp(_coords.0, 0.0, 1.0);
+        let v = 1.0 - f32::clamp(_coords.1, 0.0, 1.0);
+
+        let (width, height) = self.image.dimensions();
+
+        let mut i = (u * width as f32) as u32;
+        let mut j = (v * height as f32) as u32;
+
+        if i >= width {
+            i = width - 1;
+        }
+
+        if j >= height {
+            j = height - 1;
+        }
+
+        let color = self.image.get_pixel(i, j);
+
+        Vec3A::new(color.0[0] as f32 / 255.0, color.0[1] as f32 / 255.0, color.0[2] as f32 / 255.0)
     }
 }
