@@ -1,9 +1,11 @@
-use crate::vec3::Vec3;
+extern crate glam;
+
+use glam::*;
+
 use crate::ray::Ray;
 use crate::hit_record::HitRecord;
 use crate::materials::Material;
 use crate::aabb::AABB;
-use crate::texture::*;
 
 use std::rc::Rc;
 
@@ -39,9 +41,9 @@ impl Sphere {
 impl Hittable for Sphere {
     fn intersect(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         let oc = ray.origin - self.center;
-        let a = ray.direction.length_sq();
-        let half_b = oc.dot(&ray.direction);
-        let c = oc.length_sq() - self.radius * self.radius;
+        let a = ray.direction.length_squared();
+        let half_b = oc.dot(ray.direction);
+        let c = oc.length_squared() - self.radius * self.radius;
 
         let discriminant = half_b * half_b - a * c;
 
@@ -79,7 +81,7 @@ impl Hittable for Sphere {
     }
 
     fn bounding_box(&self, _t0: f32, _t1: f32) -> Option<AABB> {
-        let offset = Vec3{ x: self.radius, y: self.radius, z: self.radius };
+        let offset = Vec3::new(self.radius, self.radius, self.radius);
         return Option::Some(AABB {
             min: self.center - offset,
             max: self.center + offset
@@ -117,9 +119,9 @@ impl MovingSphere {
 impl Hittable for MovingSphere {
     fn intersect(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         let oc = ray.origin - self.center(ray.time);
-        let a = ray.direction.length_sq();
-        let half_b = oc.dot(&ray.direction);
-        let c = oc.length_sq() - self.radius * self.radius;
+        let a = ray.direction.length_squared();
+        let half_b = oc.dot(ray.direction);
+        let c = oc.length_squared() - self.radius * self.radius;
 
         let discriminant = half_b * half_b - a * c;
 
@@ -157,7 +159,7 @@ impl Hittable for MovingSphere {
     }
 
     fn bounding_box(&self, t0: f32, t1: f32) -> Option<AABB> {
-        let offset = Vec3{ x: self.radius, y: self.radius, z: self.radius };
+        let offset = Vec3::new(self.radius, self.radius, self.radius);
         let start = AABB {
             min: self.center(t0) - offset,
             max: self.center(t0) + offset

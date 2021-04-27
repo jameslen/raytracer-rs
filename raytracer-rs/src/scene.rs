@@ -1,6 +1,5 @@
 use crate::shapes::Hittable;
 use crate::ray::Ray;
-//use crate::materials::Material;
 use crate::aabb::AABB;
 use crate::hit_record::HitRecord;
 

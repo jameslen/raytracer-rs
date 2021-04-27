@@ -1,4 +1,7 @@
-use crate::vec3::Vec3;
+extern crate glam;
+
+use glam::*;
+
 use crate::perlin::Perlin;
 
 use std::rc::Rc;
@@ -72,7 +75,7 @@ impl NoiseTexture {
 }
 
 impl Texture for NoiseTexture {
-    fn value(&self, coords: (f32, f32), point: Vec3) -> Vec3 {
-        return Vec3{x: 0.5, y: 0.5, z: 0.5} * (1.0 + self.noise.noise(self.frequency * point));
+    fn value(&self, _coords: (f32, f32), point: Vec3) -> Vec3 {
+        return Vec3::new(0.5, 0.5, 0.5) * (1.0 + f32::sin(self.frequency * point.z + 10.0 * self.noise.turb(point, 7)));
     }
 }

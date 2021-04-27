@@ -1,4 +1,7 @@
-use crate::vec3::Vec3;
+extern crate glam;
+
+use glam::*;
+
 use crate::ray::Ray;
 
 #[derive(Copy, Clone)]
@@ -10,16 +13,8 @@ pub struct AABB {
 impl AABB {
     pub fn new() -> AABB {
         AABB {
-            min: Vec3 {
-                x: f32::INFINITY,
-                y: f32::INFINITY,
-                z: f32::INFINITY
-            },
-            max: Vec3 {
-                x: -f32::INFINITY,
-                y: -f32::INFINITY,
-                z: -f32::INFINITY
-            }
+            min: Vec3::new(f32::INFINITY,f32::INFINITY,f32::INFINITY),
+            max:  Vec3::new(-f32::INFINITY,-f32::INFINITY,-f32::INFINITY),
         }
     }
 
@@ -52,17 +47,9 @@ impl AABB {
     }
 
     pub fn surrounding_box(box1: &AABB, box2: &AABB) -> AABB {
-        let small = Vec3 {
-            x: f32::min(box1.min.x, box2.min.x),
-            y: f32::min(box1.min.y, box2.min.y),
-            z: f32::min(box1.min.z, box2.min.z),
-        };
+        let small = box1.min.min(box2.min);
 
-        let big = Vec3 {
-            x: f32::max(box1.max.x, box2.max.x),
-            y: f32::max(box1.max.y, box2.max.y),
-            z: f32::max(box1.max.z, box2.max.z),
-        };
+        let big = box1.max.max(box2.max);
 
         AABB {
             min: small,

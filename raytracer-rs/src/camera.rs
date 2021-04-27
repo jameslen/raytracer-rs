@@ -1,5 +1,11 @@
-use crate::vec3::Vec3;
+extern crate glam;
+
+use crate::vec3_helpers;
+
+use glam::*;
+
 use crate::ray::Ray;
+
 
 extern crate rand; 
 
@@ -46,7 +52,7 @@ impl Camera {
     }
 
     pub fn get_ray(&self, s: f32, t: f32) -> Ray {
-        let rd = self.lens_radius * Vec3::random_in_unit_disk();
+        let rd = self.lens_radius * vec3_helpers::random_in_unit_disk();
         let offset = self.u * rd.x + self.v * rd.y;
 
         let mut rng = rand::thread_rng();

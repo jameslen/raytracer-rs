@@ -1,9 +1,14 @@
-use crate::vec3::Vec3;
+extern crate glam;
+
 use crate::ray::Ray;
 use crate::hit_record::HitRecord;
 use crate::texture::*;
 
+use crate::vec3_helpers;
+
 use std::rc::Rc;
+
+use glam::*;
 
 pub trait Material {
     fn scatter(&self, ray: &Ray, record: &HitRecord, attentuation: &mut Vec3, scattered: &mut Ray) -> bool;
@@ -36,9 +41,9 @@ impl LambertianMat {
 
 impl Material for LambertianMat {
     fn scatter(&self, _ray: &Ray, record: &HitRecord, attentuation: &mut Vec3, scattered: &mut Ray) -> bool {
-        let mut scatter = record.normal + Vec3::random_unit_vector();
+        let mut scatter = record.normal + vec3_helpers::random_unit_vector();
 
-        if scatter.is_near_zero() {
+        if vec3_helpers::is_near_zero(scatter) {
             scatter = record.normal;
         }
 
@@ -75,14 +80,14 @@ impl MetalMat {
 
 impl Material for MetalMat {
     fn scatter(&self, ray: &Ray, record: &HitRecord, attentuation: &mut Vec3, scattered: &mut Ray) -> bool {
-        let reflected = Vec3::reflect(&ray.direction.normalize(), &record.normal);
+        let reflected = vec3_helpers::reflect(ray.direction.normalize(), record.normal);
         *scattered = Ray{
             origin: record.point,
-            direction: reflected + self.fuzz * Vec3::random_in_unit_sphere(),
+            direction: reflected + self.fuzz * vec3_helpers::random_in_unit_sphere(),
             time: ray.time
         };
         *attentuation = self.albedo;
-        return scattered.direction.dot(&record.normal) > 0.0;
+        return scattered.direction.dot(record.normal) > 0.0;
     }
 }
 
@@ -108,7 +113,7 @@ impl DielectricMat {
 
 impl Material for DielectricMat {
     fn scatter(&self, ray: &Ray, record: &HitRecord, attentuation: &mut Vec3, scattered: &mut Ray) -> bool {
-        *attentuation = Vec3{ x: 1.0, y: 1.0, z: 1.0 };
+        *attentuation = Vec3::ONE;
         let refraction_ratio: f32;
         
         if record.front_face { 
@@ -118,16 +123,16 @@ impl Material for DielectricMat {
         };
 
         let unit_direction = ray.direction.normalize();
-        let cos_theta = f32::min(Vec3::dot(&-unit_direction, &record.normal), 1.0);
+        let cos_theta = f32::min(record.normal.dot(-unit_direction), 1.0);
         let sin_theta = f32::sqrt(1.0 - cos_theta * cos_theta);
 
         let cannot_refract = refraction_ratio * sin_theta > 1.0;
         let direction: Vec3;
 
         if cannot_refract || self.reflectance(cos_theta, refraction_ratio) > rand::random() {
-            direction = Vec3::reflect(&unit_direction, &record.normal);
+            direction = vec3_helpers::reflect(unit_direction, record.normal);
         } else {
-            direction = Vec3::refract(unit_direction, record.normal, refraction_ratio);
+            direction = vec3_helpers::refract(unit_direction, record.normal, refraction_ratio);
         }
 
         *scattered = Ray{ 

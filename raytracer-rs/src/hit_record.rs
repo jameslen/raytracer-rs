@@ -1,4 +1,7 @@
-use crate::vec3::Vec3;
+extern crate glam;
+
+use glam::*;
+
 use crate::ray::Ray;
 use crate::materials::{Material, NoMaterial};
 
@@ -17,8 +20,8 @@ pub struct HitRecord {
 impl HitRecord {
     pub fn new() -> HitRecord {
         HitRecord{
-            point: Vec3{ x: 0.0, y: 0.0, z: 0.0 },
-            normal: Vec3{ x: 0.0, y: 0.0, z: 0.0 },
+            point: Vec3::ZERO,
+            normal: Vec3::ZERO,
             t: f32::INFINITY,
             tex_coords: (0.0, 0.0),
             material: Rc::new(NoMaterial{}),
@@ -27,13 +30,13 @@ impl HitRecord {
     }
 
     pub fn set_face_normal(&mut self, ray: &Ray, outward_normal: &Vec3) {
-        self.front_face = ray.direction.dot(outward_normal) < 0.0;
+        self.front_face = ray.direction.dot(*outward_normal) < 0.0;
         self.normal = {
             if self.front_face {
                 *outward_normal
             }
             else {
-                -outward_normal
+                -*outward_normal
             }
         };
     }
