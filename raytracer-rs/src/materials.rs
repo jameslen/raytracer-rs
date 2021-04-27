@@ -11,7 +11,7 @@ use std::rc::Rc;
 use glam::*;
 
 pub trait Material {
-    fn scatter(&self, ray: &Ray, record: &HitRecord, attentuation: &mut Vec3, scattered: &mut Ray) -> bool;
+    fn scatter(&self, ray: &Ray, record: &HitRecord, attentuation: &mut Vec3A, scattered: &mut Ray) -> bool;
 }
 
 #[derive(Clone)]
@@ -32,7 +32,7 @@ impl LambertianMat {
         }
     }
 
-    pub fn from_color(albedo: Vec3) -> Self {
+    pub fn from_color(albedo: Vec3A) -> Self {
         LambertianMat{
             albedo: Rc::new(SolidColor{color: albedo})
         }
@@ -40,7 +40,7 @@ impl LambertianMat {
 }
 
 impl Material for LambertianMat {
-    fn scatter(&self, _ray: &Ray, record: &HitRecord, attentuation: &mut Vec3, scattered: &mut Ray) -> bool {
+    fn scatter(&self, _ray: &Ray, record: &HitRecord, attentuation: &mut Vec3A, scattered: &mut Ray) -> bool {
         let mut scatter = record.normal + vec3_helpers::random_unit_vector();
 
         if vec3_helpers::is_near_zero(scatter) {
@@ -59,12 +59,12 @@ impl Material for LambertianMat {
 
 #[derive(Copy, Clone)]
 pub struct MetalMat {
-    albedo: Vec3,
+    albedo: Vec3A,
     fuzz: f32
 }
 
 impl MetalMat {
-    pub fn new(albedo: Vec3, fuzz: f32) -> Self {
+    pub fn new(albedo: Vec3A, fuzz: f32) -> Self {
         MetalMat{
             albedo: albedo,
             fuzz: {
@@ -79,7 +79,7 @@ impl MetalMat {
 }
 
 impl Material for MetalMat {
-    fn scatter(&self, ray: &Ray, record: &HitRecord, attentuation: &mut Vec3, scattered: &mut Ray) -> bool {
+    fn scatter(&self, ray: &Ray, record: &HitRecord, attentuation: &mut Vec3A, scattered: &mut Ray) -> bool {
         let reflected = vec3_helpers::reflect(ray.direction.normalize(), record.normal);
         *scattered = Ray{
             origin: record.point,
@@ -112,8 +112,8 @@ impl DielectricMat {
 }
 
 impl Material for DielectricMat {
-    fn scatter(&self, ray: &Ray, record: &HitRecord, attentuation: &mut Vec3, scattered: &mut Ray) -> bool {
-        *attentuation = Vec3::ONE;
+    fn scatter(&self, ray: &Ray, record: &HitRecord, attentuation: &mut Vec3A, scattered: &mut Ray) -> bool {
+        *attentuation = Vec3A::ONE;
         let refraction_ratio: f32;
         
         if record.front_face { 
@@ -127,7 +127,7 @@ impl Material for DielectricMat {
         let sin_theta = f32::sqrt(1.0 - cos_theta * cos_theta);
 
         let cannot_refract = refraction_ratio * sin_theta > 1.0;
-        let direction: Vec3;
+        let direction: Vec3A;
 
         if cannot_refract || self.reflectance(cos_theta, refraction_ratio) > rand::random() {
             direction = vec3_helpers::reflect(unit_direction, record.normal);
@@ -149,7 +149,7 @@ pub struct NoMaterial {
 }
 
 impl Material for NoMaterial {
-    fn scatter(&self, _ray: &Ray, _record: &HitRecord, _attentuation: &mut Vec3, _scattered: &mut Ray) -> bool {
+    fn scatter(&self, _ray: &Ray, _record: &HitRecord, _attentuation: &mut Vec3A, _scattered: &mut Ray) -> bool {
         println!("No Material");
         return false;
     }

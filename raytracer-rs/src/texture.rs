@@ -7,15 +7,15 @@ use crate::perlin::Perlin;
 use std::rc::Rc;
 
 pub trait Texture {
-    fn value(&self, coords: (f32, f32), point: Vec3) -> Vec3;
+    fn value(&self, coords: (f32, f32), point: Vec3A) -> Vec3A;
 }
 
 pub struct SolidColor {
-    pub color: Vec3
+    pub color: Vec3A
 }
 
 impl Texture for SolidColor {
-    fn value(&self, _coords: (f32, f32), _point: Vec3) -> Vec3 {
+    fn value(&self, _coords: (f32, f32), _point: Vec3A) -> Vec3A {
         return self.color;
     }
 }
@@ -40,7 +40,7 @@ impl CheckeredTexture {
         }
     }
 
-    pub fn from_color(odd: Vec3, even: Vec3) -> Self {
+    pub fn from_color(odd: Vec3A, even: Vec3A) -> Self {
         CheckeredTexture{
             odd: Rc::new(SolidColor{color: odd}),
             even: Rc::new(SolidColor{color: even})
@@ -49,7 +49,7 @@ impl CheckeredTexture {
 }
 
 impl Texture for CheckeredTexture {
-    fn value(&self, coords: (f32, f32), point: Vec3) -> Vec3 {
+    fn value(&self, coords: (f32, f32), point: Vec3A) -> Vec3A {
         let sines = f32::sin(10.0 * point.x) * f32::sin(10.0 * point.y) * f32::sin(10.0 * point.z);
 
         if sines < 0.0 {
@@ -75,7 +75,7 @@ impl NoiseTexture {
 }
 
 impl Texture for NoiseTexture {
-    fn value(&self, _coords: (f32, f32), point: Vec3) -> Vec3 {
-        return Vec3::new(0.5, 0.5, 0.5) * (1.0 + f32::sin(self.frequency * point.z + 10.0 * self.noise.turb(point, 7)));
+    fn value(&self, _coords: (f32, f32), point: Vec3A) -> Vec3A {
+        return Vec3A::new(0.5, 0.5, 0.5) * (1.0 + f32::sin(self.frequency * point.z + 10.0 * self.noise.turb(point, 7)));
     }
 }

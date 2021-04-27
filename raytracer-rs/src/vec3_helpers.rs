@@ -4,25 +4,25 @@ extern crate glam;
 use rand::prelude::*;
 use glam::*;
 
-pub fn is_near_zero(v: Vec3) -> bool {
+pub fn is_near_zero(v: Vec3A) -> bool {
     return v.x.abs() < f32::EPSILON && v.y.abs() < f32::EPSILON && v.z.abs() < f32::EPSILON; 
 }
 
-pub fn random() -> Vec3 {
+pub fn random() -> Vec3A {
     let mut rng = rand::thread_rng();
-    Vec3::new(rng.gen(), rng.gen(), rng.gen())
+    Vec3A::new(rng.gen(), rng.gen(), rng.gen())
 }
 
-pub fn random_range(min: f32, max: f32) -> Vec3 {
+pub fn random_range(min: f32, max: f32) -> Vec3A {
     let mut rng = rand::thread_rng();
-    glam::Vec3::new(
+    glam::Vec3A::new(
         rng.gen_range(min..max),
         rng.gen_range(min..max),
         rng.gen_range(min..max)
     )
 }
 
-pub fn random_in_unit_sphere() -> Vec3 {
+pub fn random_in_unit_sphere() -> Vec3A {
     let mut p = random_range(-1.0, 1.0);
     while p.length_squared() >= 1.0 {
         p = random_range(-1.0, 1.0);
@@ -30,11 +30,11 @@ pub fn random_in_unit_sphere() -> Vec3 {
     p
 }
 
-pub fn random_unit_vector() -> Vec3 {
+pub fn random_unit_vector() -> Vec3A {
     random_in_unit_sphere().normalize()
 }
 
-pub fn random_in_hemisphere(normal: Vec3) -> Vec3 {
+pub fn random_in_hemisphere(normal: Vec3A) -> Vec3A {
     let in_unit_sphere = random_in_unit_sphere();
 
     if in_unit_sphere.dot(normal) > 0.0 {
@@ -44,10 +44,10 @@ pub fn random_in_hemisphere(normal: Vec3) -> Vec3 {
     }
 }
 
-pub fn random_in_unit_disk() -> Vec3 {
+pub fn random_in_unit_disk() -> Vec3A {
     let mut rng = rand::thread_rng();
     loop {
-        let p = Vec3::new( 
+        let p = Vec3A::new( 
             rng.gen_range(-1.0..1.0),
             rng.gen_range(-1.0..1.0),  
             0.0
@@ -59,13 +59,13 @@ pub fn random_in_unit_disk() -> Vec3 {
     }
 }
 
-pub fn reflect(_vec: Vec3, _normal: Vec3) -> Vec3 {
+pub fn reflect(_vec: Vec3A, _normal: Vec3A) -> Vec3A {
     let scalar = 2_f32 * _vec.dot(_normal);
     let scaled_normal = scalar * _normal;
     _vec - scaled_normal
 }
 
-pub fn refract(uv: Vec3, normal: Vec3, etai_over_etat: f32) -> Vec3 {
+pub fn refract(uv: Vec3A, normal: Vec3A, etai_over_etat: f32) -> Vec3A {
     let dot_p = normal.dot(-uv);
     let cos_theta = f32::min(dot_p, 1.0);
     let r_out_perp = etai_over_etat * (uv + cos_theta * normal);

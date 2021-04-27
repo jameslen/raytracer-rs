@@ -6,15 +6,15 @@ use crate::ray::Ray;
 
 #[derive(Copy, Clone)]
 pub struct AABB {
-    pub min: Vec3,
-    pub max: Vec3
+    pub min: Vec3A,
+    pub max: Vec3A
 }
 
 impl AABB {
     pub fn new() -> AABB {
         AABB {
-            min: Vec3::new(f32::INFINITY,f32::INFINITY,f32::INFINITY),
-            max:  Vec3::new(-f32::INFINITY,-f32::INFINITY,-f32::INFINITY),
+            min: Vec3A::new(f32::INFINITY,f32::INFINITY,f32::INFINITY),
+            max:  Vec3A::new(-f32::INFINITY,-f32::INFINITY,-f32::INFINITY),
         }
     }
 

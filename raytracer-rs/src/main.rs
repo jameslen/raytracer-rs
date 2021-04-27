@@ -29,7 +29,7 @@ use bvh_node::BVHNode;
 use texture::*;
 
 
-// fn write_color(color: &Vec3, samples_per_pixel: f32) -> Rgb {
+// fn write_color(color: &Vec3A, samples_per_pixel: f32) -> Rgb {
 //     let scale = 1.0 / samples_per_pixel;
 //     let r = f32::sqrt(color.x * scale);
 //     let g = f32::sqrt(color.y * scale);
@@ -38,26 +38,26 @@ use texture::*;
 //      (256.0 * f32::clamp(r,0.0, 0.999)) as u8, (256.0 * f32::clamp(g, 0.0, 0.999)) as u8, (256.0 * f32::clamp(b, 0.0, 0.999)) as u8);
 // }
 
-fn ray_color(ray: &Ray, world: &dyn Hittable, depth: i32) -> Vec3 {
+fn ray_color(ray: &Ray, world: &dyn Hittable, depth: i32) -> Vec3A {
     if depth <= 0 {
-        return Vec3::ZERO;
+        return Vec3A::ZERO;
     }
 
     let world_result = world.intersect(ray, 0.005, f32::INFINITY);
     if let Option::Some(record) = world_result {
-        let mut scattered = Ray{ origin: Vec3::ZERO, direction: Vec3::ZERO, time: ray.time };
-        let mut attentuation = Vec3::ONE;
+        let mut scattered = Ray{ origin: Vec3A::ZERO, direction: Vec3A::ZERO, time: ray.time };
+        let mut attentuation = Vec3A::ONE;
 
         if record.material.scatter(ray, &record, &mut attentuation, &mut scattered) {
             return attentuation * ray_color(&scattered, world, depth - 1);
         }
-        return Vec3::ZERO;
+        return Vec3A::ZERO;
     }
 
     let normalized = ray.direction.normalize();
     let t = 0.5_f32 * (normalized.y + 1.0);
 
-    ((1.0 - t) * Vec3::ONE) + (t * Vec3::new(0.5, 0.7, 1.0))
+    ((1.0 - t) * Vec3A::ONE) + (t * Vec3A::new(0.5, 0.7, 1.0))
 }
 
 fn degree_to_rad(deg: f32) -> f32 {
@@ -69,24 +69,24 @@ pub fn generate_random_world() -> Scene {
 
     // Ground
     let material = LambertianMat::from_texture(CheckeredTexture::from_color(
-        Vec3::new(0.2, 0.3, 0.1),
-        Vec3::new(0.9, 0.9, 0.9),
+        Vec3A::new(0.2, 0.3, 0.1),
+        Vec3A::new(0.9, 0.9, 0.9),
     ));
-    s.add_shape(Sphere::new(Vec3::new(0.0, -1000.0, 0.0), 1000.0, material));
+    s.add_shape(Sphere::new(Vec3A::new(0.0, -1000.0, 0.0), 1000.0, material));
     
     let mut rng = rand::thread_rng();
 
-    let point = Vec3::new(4.0, 0.2, 0.0);
+    let point = Vec3A::new(4.0, 0.2, 0.0);
 
     for a in -11..11 {
         for b in -11..11 {
             let choose_mat: f32 = rng.gen();
 
-            let center = Vec3::new(a as f32 + 0.9 * rng.gen::<f32>(), 0.2, b as f32 * 0.9 * rng.gen::<f32>());
+            let center = Vec3A::new(a as f32 + 0.9 * rng.gen::<f32>(), 0.2, b as f32 * 0.9 * rng.gen::<f32>());
 
             if (center - point).length() > 0.9 {
                 if choose_mat < 0.8 {
-                    let center2 = center + Vec3::new(0.0, rng.gen_range(0.0..0.5), 0.0);
+                    let center2 = center + Vec3A::new(0.0, rng.gen_range(0.0..0.5), 0.0);
                     s.add_shape(MovingSphere::new(center, center2, 0.2, 0.0, 1.0, LambertianMat::from_color(vec3_helpers::random() * vec3_helpers::random())));
                 } else if choose_mat < 0.95 {
                     s.add_shape(Sphere::new(center, 0.2, MetalMat::new(vec3_helpers::random_range(0.5,1.0), rng.gen_range(0.5..1.0))));
@@ -97,9 +97,9 @@ pub fn generate_random_world() -> Scene {
         }
     }
 
-    s.add_shape(Sphere::new(Vec3::new( 0.0, 1.0, 0.0), 1.0, DielectricMat::new(1.5)));
-    s.add_shape(Sphere::new(Vec3::new(-4.0, 1.0, 0.0), 1.0, LambertianMat::from_color(Vec3::new(0.4, 0.2, 0.1))));
-    s.add_shape(Sphere::new(Vec3::new( 4.0, 1.0, 0.0), 1.0, MetalMat::new(Vec3::new(0.7, 0.6, 0.5), 0.0)));
+    s.add_shape(Sphere::new(Vec3A::new( 0.0, 1.0, 0.0), 1.0, DielectricMat::new(1.5)));
+    s.add_shape(Sphere::new(Vec3A::new(-4.0, 1.0, 0.0), 1.0, LambertianMat::from_color(Vec3A::new(0.4, 0.2, 0.1))));
+    s.add_shape(Sphere::new(Vec3A::new( 4.0, 1.0, 0.0), 1.0, MetalMat::new(Vec3A::new(0.7, 0.6, 0.5), 0.0)));
 
     return s;
 }
@@ -108,12 +108,12 @@ fn two_spheres() -> Scene {
     let mut s = Scene::new();
 
     let checkered = Rc::new(CheckeredTexture::from_color(
-        Vec3::new(0.2, 0.3, 0.1),
-        Vec3::new(0.9, 0.9, 0.9),
+        Vec3A::new(0.2, 0.3, 0.1),
+        Vec3A::new(0.9, 0.9, 0.9),
     ));
 
-    s.add_shape(Sphere::new(Vec3::new(0.0,  10.0, 0.0), 10.0, LambertianMat::from_shared_texture(checkered.clone())));
-    s.add_shape(Sphere::new(Vec3::new(0.0, -10.0, 0.0), 10.0, LambertianMat::from_shared_texture(checkered.clone())));
+    s.add_shape(Sphere::new(Vec3A::new(0.0,  10.0, 0.0), 10.0, LambertianMat::from_shared_texture(checkered.clone())));
+    s.add_shape(Sphere::new(Vec3A::new(0.0, -10.0, 0.0), 10.0, LambertianMat::from_shared_texture(checkered.clone())));
 
     return s;
 }
@@ -123,8 +123,8 @@ fn two_perlin_spheres() -> Scene {
 
     let noise_texture = Rc::new(NoiseTexture::new(4.0));
 
-    s.add_shape(Sphere::new(Vec3::new(0.0, -1000.0, 0.0), 1000.0, LambertianMat::from_shared_texture(noise_texture.clone())));
-    s.add_shape(Sphere::new(Vec3::new(0.0, 2.0, 0.0), 2.0, LambertianMat::from_shared_texture(noise_texture.clone())));
+    s.add_shape(Sphere::new(Vec3A::new(0.0, -1000.0, 0.0), 1000.0, LambertianMat::from_shared_texture(noise_texture.clone())));
+    s.add_shape(Sphere::new(Vec3A::new(0.0, 2.0, 0.0), 2.0, LambertianMat::from_shared_texture(noise_texture.clone())));
 
     return s;
 }
@@ -154,8 +154,8 @@ fn main() {
     let fov: f32;
     let aperture: f32;
     let focus_distance: f32;
-    let origin: Vec3;
-    let target: Vec3;
+    let origin: Vec3A;
+    let target: Vec3A;
 
     let quality = ImageQuality::Low;
     let scene = SceneType::Random;
@@ -180,22 +180,22 @@ fn main() {
     match scene {
         SceneType::Random => {
             world = generate_random_world();
-            origin = Vec3::new(13.0, 2.0, 3.0);
-            target = Vec3::new(0.0, 0.0, 0.0);
+            origin = Vec3A::new(13.0, 2.0, 3.0);
+            target = Vec3A::new(0.0, 0.0, 0.0);
             fov = degree_to_rad(20.0);
             aperture = 0.1;
         },
         SceneType::TwoSpheres => {
             world = two_spheres();
-            origin = Vec3::new(13.0, 2.0, 3.0);
-            target = Vec3::new(0.0, 0.0, 0.0);
+            origin = Vec3A::new(13.0, 2.0, 3.0);
+            target = Vec3A::new(0.0, 0.0, 0.0);
             fov = degree_to_rad(20.0);
             aperture = 0.0;
         },
         SceneType::PerlinSpheres => {
             world = two_perlin_spheres();
-            origin = Vec3::new(13.0, 2.0, 3.0);
-            target = Vec3::new(0.0, 0.0, 0.0);
+            origin = Vec3A::new(13.0, 2.0, 3.0);
+            target = Vec3A::new(0.0, 0.0, 0.0);
             fov = degree_to_rad(20.0);
             aperture = 0.0;
         }
@@ -204,7 +204,7 @@ fn main() {
 
     let mut rng = rand::thread_rng();
 
-    let vup = Vec3::Y;
+    let vup = Vec3A::Y;
     focus_distance = 10.0;
     let camera = Camera::new(origin, target, vup, fov, aspect_ratio, aperture, focus_distance, 0.0, 1.0); 
     let bvh = BVHNode::from_scene(&world, 0.0, 1.0);
@@ -215,7 +215,7 @@ fn main() {
 
     let now = Instant::now();
     for (i, j, pixel) in output.enumerate_pixels_mut() {
-        let mut color = Vec3::ZERO;
+        let mut color = Vec3A::ZERO;
         for _sample in 0..samples_per_pixel {
             let u = (i as f32 + rng.gen::<f32>()) / (image_width - 1) as f32;
             let v = ((image_height - 1 - j) as f32 + rng.gen::<f32>()) / (image_height - 1) as f32;

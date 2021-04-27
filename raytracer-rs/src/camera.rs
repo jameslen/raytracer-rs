@@ -12,20 +12,20 @@ extern crate rand;
 use rand::prelude::*;
 
 pub struct Camera {
-    origin: Vec3,
-    lower_left_corner: Vec3,
-    horizontal: Vec3,
-    vertical: Vec3,
-    u: Vec3,
-    v: Vec3,
-    w: Vec3,
+    origin: Vec3A,
+    lower_left_corner: Vec3A,
+    horizontal: Vec3A,
+    vertical: Vec3A,
+    u: Vec3A,
+    v: Vec3A,
+    w: Vec3A,
     lens_radius: f32,
     time_start: f32,
     time_end: f32
 }
 
 impl Camera {
-    pub fn new(origin: Vec3, target: Vec3, up: Vec3, vfov: f32, aspect_ratio: f32, aperture: f32, focus_distance: f32, time_start: f32, time_end: f32) -> Camera {
+    pub fn new(origin: Vec3A, target: Vec3A, up: Vec3A, vfov: f32, aspect_ratio: f32, aperture: f32, focus_distance: f32, time_start: f32, time_end: f32) -> Camera {
         let h = f32::tan(vfov / 2.0);
         let viewport_height = 2.0 * h;
         let viewport_width = viewport_height * aspect_ratio;

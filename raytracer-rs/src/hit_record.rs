@@ -9,8 +9,8 @@ use std::rc::Rc;
 
 #[derive(Clone)]
 pub struct HitRecord {
-    pub point: Vec3,
-    pub normal: Vec3,
+    pub point: Vec3A,
+    pub normal: Vec3A,
     pub t: f32,
     pub tex_coords: (f32, f32),
     pub material: Rc<dyn Material>,
@@ -20,8 +20,8 @@ pub struct HitRecord {
 impl HitRecord {
     pub fn new() -> HitRecord {
         HitRecord{
-            point: Vec3::ZERO,
-            normal: Vec3::ZERO,
+            point: Vec3A::ZERO,
+            normal: Vec3A::ZERO,
             t: f32::INFINITY,
             tex_coords: (0.0, 0.0),
             material: Rc::new(NoMaterial{}),
@@ -29,7 +29,7 @@ impl HitRecord {
         }
     }
 
-    pub fn set_face_normal(&mut self, ray: &Ray, outward_normal: &Vec3) {
+    pub fn set_face_normal(&mut self, ray: &Ray, outward_normal: &Vec3A) {
         self.front_face = ray.direction.dot(*outward_normal) < 0.0;
         self.normal = {
             if self.front_face {

@@ -14,7 +14,7 @@ pub trait Hittable {
     fn bounding_box(&self, t0: f32, t1: f32) -> Option<AABB>;
 }
 
-fn get_sphere_uv(point: Vec3) -> (f32, f32) {
+fn get_sphere_uv(point: Vec3A) -> (f32, f32) {
     let theta = f32::acos(-point.y);
     let phi = f32::atan2(-point.z, point.x) + std::f32::consts::PI;
 
@@ -23,13 +23,13 @@ fn get_sphere_uv(point: Vec3) -> (f32, f32) {
 
 #[derive(Clone)]
 pub struct Sphere {
-    pub center: Vec3,
+    pub center: Vec3A,
     pub radius: f32,
     pub material: Rc::<dyn Material>
 }
 
 impl Sphere {
-    pub fn new<T: 'static + Material>(center: Vec3, radius: f32, material: T) -> Sphere {
+    pub fn new<T: 'static + Material>(center: Vec3A, radius: f32, material: T) -> Sphere {
         Sphere {
             center: center,
             radius: radius,
@@ -81,7 +81,7 @@ impl Hittable for Sphere {
     }
 
     fn bounding_box(&self, _t0: f32, _t1: f32) -> Option<AABB> {
-        let offset = Vec3::new(self.radius, self.radius, self.radius);
+        let offset = Vec3A::new(self.radius, self.radius, self.radius);
         return Option::Some(AABB {
             min: self.center - offset,
             max: self.center + offset
@@ -91,8 +91,8 @@ impl Hittable for Sphere {
 
 #[derive(Clone)]
 pub struct MovingSphere {
-    pub center_start: Vec3,
-    pub center_end: Vec3,
+    pub center_start: Vec3A,
+    pub center_end: Vec3A,
     pub radius: f32,
     pub time_start: f32,
     pub time_end: f32,
@@ -100,7 +100,7 @@ pub struct MovingSphere {
 }
 
 impl MovingSphere {
-    pub fn new<T: 'static + Material>(center_start: Vec3, center_end: Vec3, radius: f32, time_start: f32, time_end: f32, material: T) -> MovingSphere {
+    pub fn new<T: 'static + Material>(center_start: Vec3A, center_end: Vec3A, radius: f32, time_start: f32, time_end: f32, material: T) -> MovingSphere {
         MovingSphere {
             center_start: center_start,
             center_end: center_end,
@@ -111,7 +111,7 @@ impl MovingSphere {
         }
     }
 
-    pub fn center(&self, time: f32) -> Vec3 {
+    pub fn center(&self, time: f32) -> Vec3A {
         return self.center_start + ((time - self.time_start) / (self.time_end - self.time_start) * (self.center_end - self.center_start));
     }
 }
@@ -159,7 +159,7 @@ impl Hittable for MovingSphere {
     }
 
     fn bounding_box(&self, t0: f32, t1: f32) -> Option<AABB> {
-        let offset = Vec3::new(self.radius, self.radius, self.radius);
+        let offset = Vec3A::new(self.radius, self.radius, self.radius);
         let start = AABB {
             min: self.center(t0) - offset,
             max: self.center(t0) + offset

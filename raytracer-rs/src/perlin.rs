@@ -10,7 +10,7 @@ use rand::prelude::*;
 const POINT_COUNT: usize = 256;
 
 pub struct Perlin {
-    pub rand_vec: Vec<glam::Vec3>,
+    pub rand_vec: Vec<glam::Vec3A>,
     pub perm_x: Vec<i32>,
     pub perm_y: Vec<i32>,
     pub perm_z: Vec<i32>
@@ -18,7 +18,7 @@ pub struct Perlin {
 
 impl Perlin {
     pub fn new() -> Self {
-        let mut rand_vec = Vec::<Vec3>::new();
+        let mut rand_vec = Vec::<Vec3A>::new();
         rand_vec.reserve(POINT_COUNT);
 
         let mut rng = rand::thread_rng();
@@ -45,7 +45,7 @@ impl Perlin {
         return p;
     }
 
-    pub fn noise(&self, point: Vec3) -> f32 {
+    pub fn noise(&self, point: Vec3A) -> f32 {
         let mut u = point.x - point.x.floor();
         let mut v = point.y - point.y.floor();
         let mut w = point.z - point.z.floor();
@@ -54,7 +54,7 @@ impl Perlin {
         let j = point.y.floor() as i32;
         let k = point.z.floor() as i32;
 
-        let mut c = [[[glam::Vec3::new(0.0,0.0,0.0); 2]; 2]; 2];
+        let mut c = [[[glam::Vec3A::new(0.0,0.0,0.0); 2]; 2]; 2];
 
         for di in 0..2 {
             for dj in 0..2 {
@@ -77,7 +77,7 @@ impl Perlin {
         for di in 0..2 {
             for dj in 0..2 {
                 for dk in 0..2 {
-                    let weight = Vec3::new(u - di as f32, v - dj as f32, w - dk as f32);
+                    let weight = Vec3A::new(u - di as f32, v - dj as f32, w - dk as f32);
                     acc += (di as f32 * uu + (1.0 - di as f32) * (1.0 - uu)) *
                            (dj as f32 * vv + (1.0 - dj as f32) * (1.0 - vv)) *
                            (dk as f32 * ww + (1.0 - dk as f32) * (1.0 - ww)) * 
@@ -89,7 +89,7 @@ impl Perlin {
         return acc;
     }
 
-    pub fn turb(&self, point: Vec3, depth: i32) -> f32 {
+    pub fn turb(&self, point: Vec3A, depth: i32) -> f32 {
         let mut acc = 0.0;
         let mut temp = point;
         let mut weight = 1.0;
