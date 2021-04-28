@@ -18,30 +18,16 @@ impl AABB {
         }
     }
 
-    pub fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> bool {
-        let mut t_min = t_min;
-        let mut t_max = t_max;
-        for i in 0..2 {
-            let inv_d = 1.0 / ray.direction[i];
-            let mut t0 = (self.min[i] - ray.origin[i]) * inv_d;
-            let mut t1 = (self.max[i] - ray.origin[i]) * inv_d;
+    pub fn hit(&self, ray: &Ray, _t_min: f32, _t_max: f32) -> bool {
+        let recip = ray.direction.recip();
+        let min = (self.min - ray.origin) * recip;
+        let max = (self.max - ray.origin) * recip;
 
-            if inv_d < 0.0 {
-                let temp = t0;
-                t0 = t1;
-                t1 = temp;
-            }
-            
-            if t0 > t_min {
-                t_min = t0;
-            }
-            if t1 < t_max {
-                t_max = t1;
-            }
+        let t_min = f32::max(f32::max(f32::min(min.x, max.x), f32::min(min.y, max.y)), f32::min(min.z, max.z));
+        let t_max = f32::min(f32::min(f32::max(min.x, max.x), f32::max(min.y, max.y)), f32::max(min.z, max.z));
 
-            if t_max <= t_min {
-                return false;
-            }
+        if t_max < 0.0 || t_min > t_max {
+            return false;
         }
         return true;
     }

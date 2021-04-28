@@ -57,11 +57,16 @@ fn ray_color(ray: &Ray, background: Vec3A, world: &dyn Hittable, depth: i32) -> 
     } else {
         return background;
     }
+}
 
-    // let normalized = ray.direction.normalize();
-    // let t = 0.5_f32 * (normalized.y + 1.0);
+fn simple_ray_color(ray: &Ray, background: Vec3A, world: &dyn Hittable, _depth: i32) -> Vec3A {
 
-    // ((1.0 - t) * Vec3A::ONE) + (t * Vec3A::new(0.5, 0.7, 1.0))
+    let world_result = world.intersect(ray, 0.005, f32::INFINITY);
+    if let Option::Some(record) = world_result {
+        return Vec3A::new(record.t, record.t, record.t);
+    } else {
+        return background;
+    }
 }
 
 fn degree_to_rad(deg: f32) -> f32 {
@@ -168,11 +173,17 @@ fn cornell_box() -> Scene {
 
     s.add_shape(YZRect::new(Vec2::new(0.0, 0.0), Vec2::new(555.0, 555.0), 555.0, LambertianMat::from_color(green)));
     s.add_shape(YZRect::new(Vec2::new(0.0, 0.0), Vec2::new(555.0, 555.0), 0.0, LambertianMat::from_color(red)));
+    s.add_shape(XZRect::new(Vec2::new(213.0, 227.0), Vec2::new(343.0, 332.0), 554.0, DiffuseLight::from_color(light)));
     s.add_shape(XZRect::new(Vec2::new(0.0, 0.0), Vec2::new(555.0, 555.0), 555.0, LambertianMat::from_color(white)));
     s.add_shape(XZRect::new(Vec2::new(0.0, 0.0), Vec2::new(555.0, 555.0), 0.0, LambertianMat::from_color(white)));
     s.add_shape(XYRect::new(Vec2::new(0.0, 0.0), Vec2::new(555.0, 555.0), 555.0, LambertianMat::from_color(white)));
 
-    s.add_shape(XZRect::new(Vec2::new(213.0, 227.0), Vec2::new(343.0, 332.0), 554.0, DiffuseLight::from_color(light)));
+    let b2 = Box::new(165.0, 165.0, 165.0, LambertianMat::from_color(white));
+    let rotation = Mat4::from_rotation_y(degree_to_rad(-18.0));
+    let translation = Mat4::from_translation(Vec3::new(260.0, 0.0, 65.0));
+    let final_transform = translation * rotation;
+
+    s.add_shape(TransformedObject::new(b2, final_transform));
 
     let b1 = Box::new(165.0, 330.0, 165.0, LambertianMat::from_color(white));
     let rotation = Mat4::from_rotation_y(degree_to_rad(15.0));
@@ -181,22 +192,23 @@ fn cornell_box() -> Scene {
 
     s.add_shape(TransformedObject::new(b1, final_transform));
 
-    let b2 = Box::new(165.0, 165.0, 165.0, LambertianMat::from_color(white));
-    let rotation = Mat4::from_rotation_y(degree_to_rad(-18.0));
-    let translation = Mat4::from_translation(Vec3::new(130.0, 0.0, 65.0));
-    let final_transform = translation * rotation;
-
-    s.add_shape(TransformedObject::new(b2, final_transform));
+    
 
     return s;
 }
 
+fn float_to_u8_color(f: f32) -> u8 {
+    (256.0 * f32::clamp(f, 0.0, 0.999)) as u8
+}
+
+#[allow(dead_code)]
 enum ImageQuality {
     Low,
     High,
     Cornell
 }
 
+#[allow(dead_code)]
 enum SceneType {
     Random,
     TwoSpheres,
@@ -243,7 +255,7 @@ fn main() {
         ImageQuality::Cornell => {
             aspect_ratio = 1.0;
             image_width = 600;
-            samples_per_pixel = 200;
+            samples_per_pixel = 100;
             max_depth = 50;
         }
     }
@@ -297,7 +309,8 @@ fn main() {
             target = Vec3A::new(278.0, 278.0, 0.0);
             fov = degree_to_rad(40.0);
             aperture = 0.0;
-            background = Vec3A::ZERO;
+            //background = Vec3A::ZERO;
+            background = Vec3A::new(0.7, 0.8, 1.0);
         }
     }
 
@@ -312,21 +325,49 @@ fn main() {
 
     let inv_samples = 1.0 / samples_per_pixel as f32;
 
+    let mut max_t: f32 = 0.0;
+    for (i, j, pixel) in output.enumerate_pixels_mut() {
+        //let mut color = Vec3A::ZERO;
+        // for _sample in 0..samples_per_pixel {
+        //     let u = (i as f32 + rng.gen::<f32>()) / (image_width - 1) as f32;
+        //     let v = ((image_height - 1 - j) as f32 + rng.gen::<f32>()) / (image_height - 1) as f32;
+
+        //     let r = camera.get_ray(u, v);
+
+        //     color += ray_color(&r, background, &world, max_depth);
+        // }
+
+        let u = (i as f32) / (image_width - 1) as f32;
+        let v = ((image_height - 1 - j) as f32) / (image_height - 1) as f32;
+
+        let r = camera.get_ray(u, v);
+
+        let color = simple_ray_color(&r, background, &bvh, max_depth);
+
+        max_t = f32::max(color.x, max_t);
+    }
+
     let now = Instant::now();
     for (i, j, pixel) in output.enumerate_pixels_mut() {
-        let mut color = Vec3A::ZERO;
-        for _sample in 0..samples_per_pixel {
-            let u = (i as f32 + rng.gen::<f32>()) / (image_width - 1) as f32;
-            let v = ((image_height - 1 - j) as f32 + rng.gen::<f32>()) / (image_height - 1) as f32;
+        //let mut color = Vec3A::ZERO;
+        // for _sample in 0..samples_per_pixel {
+        //     let u = (i as f32 + rng.gen::<f32>()) / (image_width - 1) as f32;
+        //     let v = ((image_height - 1 - j) as f32 + rng.gen::<f32>()) / (image_height - 1) as f32;
 
-            let r = camera.get_ray(u, v);
+        //     let r = camera.get_ray(u, v);
 
-            color += ray_color(&r, background, &bvh, max_depth);
-        }
+        //     color += ray_color(&r, background, &world, max_depth);
+        // }
 
-        color *= inv_samples;
+        let u = (i as f32) / (image_width - 1) as f32;
+        let v = ((image_height - 1 - j) as f32) / (image_height - 1) as f32;
 
-        *pixel = Rgb([(256.0 * f32::clamp(color.x,0.0, 0.999)) as u8, (256.0 * f32::clamp(color.y, 0.0, 0.999)) as u8, (256.0 * f32::clamp(color.z, 0.0, 0.999)) as u8]);
+        let r = camera.get_ray(u, v);
+
+        let color = simple_ray_color(&r, background, &bvh, max_depth) / max_t;
+
+
+        *pixel = Rgb([float_to_u8_color(color.x), float_to_u8_color(color.y), float_to_u8_color(color.z)]);
     }
     println!("Time elapsed: {}", now.elapsed().as_millis());
 

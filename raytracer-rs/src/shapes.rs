@@ -4,8 +4,10 @@ use glam::*;
 
 use crate::ray::Ray;
 use crate::hit_record::HitRecord;
-use crate::materials::Material;
+use crate::materials::*;//Material;
 use crate::aabb::AABB;
+
+use crate::texture::*;
 
 use std::rc::Rc;
 
@@ -40,8 +42,10 @@ impl<T: Hittable> TransformedObject<T> {
 
     fn generate_aabb(object: &T, transform: Mat4) -> AABB {
         let base_aabb = object.bounding_box(0.0, 1.0).unwrap();
+        println!("pre: min: {:?}, max: {:?}", base_aabb.min, base_aabb.max);
         let min = transform.transform_point3a(base_aabb.min);
         let max = transform.transform_point3a(base_aabb.max);
+        println!("pre: min: {:?}, max: {:?}", min, max);
 
         AABB{
             min: min.min(max),
@@ -61,14 +65,20 @@ impl<T: Hittable> Hittable for TransformedObject<T> {
         let result = self.object.intersect(&local_ray, t_min, t_max);
 
         if let Some(record) = result {
-            return Some(HitRecord{
-                point: self.transform.transform_point3a(record.point),
+            let normal = self.transform.transform_vector3a(record.normal).normalize();
+            let point = self.transform.transform_point3a(record.point);
+            let mut record = HitRecord{
+                point: point, //ray.at(record.t),
                 t: record.t,
-                normal: self.transform.transform_vector3a(record.normal).normalize(),
+                normal: normal,
                 material: record.material,
                 tex_coords: record.tex_coords,
                 front_face: record.front_face
-            })
+            };
+
+            record.set_face_normal(ray, &normal);
+
+            return Some(record); 
         }
 
         return None;
@@ -411,6 +421,14 @@ impl Box {
             material: Rc::new(material)
         }
     }
+
+    pub fn testing_box<T: 'static + Material>(min: Vec3A, max: Vec3A, color: T) -> Self{
+        Box{
+            min: min,
+            max: max,
+            material: Rc::new(color)
+        }
+    }
 }
 
 fn axis_min(first: (f32, usize), second: (f32, usize)) -> (f32, usize) {
@@ -430,13 +448,13 @@ fn axis_max(first: (f32, usize), second: (f32, usize)) -> (f32, usize) {
 }
 
 impl Hittable for Box {
-    fn intersect(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
+    fn intersect(&self, ray: &Ray, _t_min: f32, _t_max: f32) -> Option<HitRecord> {
         let recip = ray.direction.recip();
         let min = (self.min - ray.origin) * recip;
         let max = (self.max - ray.origin) * recip;
 
         let (t_min, min_axis) = axis_max(axis_max(axis_min((min.x, 0), (max.x, 1)), axis_min((min.y, 2), (max.y, 3))), axis_min((min.z, 4), (max.z, 5)));
-        let (t_max, max_axis) = axis_min(axis_min(axis_max((min.x, 0), (max.x, 1)), axis_max((min.y, 2), (max.y, 3))), axis_max((min.z, 4), (max.z, 5)));
+        let (t_max, _)        = axis_min(axis_min(axis_max((min.x, 0), (max.x, 1)), axis_max((min.y, 2), (max.y, 3))), axis_max((min.z, 4), (max.z, 5)));
 
         if t_max < 0.0 || t_min > t_max {
             return None;
@@ -449,15 +467,61 @@ impl Hittable for Box {
             3 =>  Vec3A::Y,
             4 => -Vec3A::Z,
             5 =>  Vec3A::Z,
-            _ =>  Vec3A::ZERO
+            _ =>  {
+                println!("WTF");
+                Vec3A::ZERO
+            }
         };
+
+        let color = match min_axis {
+            0 => Vec3A::X + Vec3A::Y,
+            1 =>  Vec3A::X,
+            2 => Vec3A::Y + Vec3A::Z,
+            3 =>  Vec3A::Y,
+            4 =>  Vec3A::Z + Vec3A::X,
+            5 =>  Vec3A::Z,
+            _ =>  {
+                println!("WTF");
+                Vec3A::ZERO
+            }
+        };
+
+        let point = ray.at(t_min);
+        let delta = point / self.max;
+        let tex_coords = match min_axis {
+            0 => { // X_MIN
+                (delta.y, delta.z)
+            },
+            1 => { // X_MAX
+                (delta.y, delta.z)
+            },
+            2 => { // Y_MIN
+                (delta.x, delta.z)
+            },
+            3 => { // Y_MAX
+                (delta.x, delta.z)
+            },
+            4 => { // Z_MIN
+                (delta.x, delta.y)
+            },
+            5 => { // Z_MAX
+                (delta.x, delta.y)
+            },
+            _ =>  {
+                println!("WTF");
+                (0.0, 0.0)
+            }
+        };
+
+
 
         let mut record = HitRecord{
             t: t_min,
-            point: ray.at(t_min),
-            tex_coords: (0.0, 0.0), // TODO: Impl tex coords
+            point: point,
+            tex_coords: tex_coords, // TODO: Impl tex coords
             normal: normal,
-            material: self.material.clone(),
+            //material: self.material.clone(),
+            material: Rc::new(LambertianMat::from_texture(SolidColor{ color: Vec3A::new(tex_coords.0, tex_coords.1, 0.0) })),
             front_face: true
         };
 

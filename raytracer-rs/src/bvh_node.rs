@@ -102,9 +102,9 @@ impl BVHNode {
             box_b = aabb;
         }
 
-        if box_a.min[axis] < box_b.min[axis] {
+        if (box_a.min[axis] - box_b.min[axis]) < f32::EPSILON {
             return Ordering::Less;
-        } else if box_a.min[axis] > box_b.min[axis] {
+        } else if (box_a.min[axis] - box_b.min[axis]) > f32::EPSILON {
             return Ordering::Greater;
         } else {
             return Ordering::Equal;
