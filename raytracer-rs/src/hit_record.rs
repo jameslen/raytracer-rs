@@ -5,7 +5,7 @@ use glam::*;
 use crate::ray::Ray;
 use crate::materials::{Material, NoMaterial};
 
-use std::rc::Rc;
+use std::sync::Arc;
 
 #[derive(Clone)]
 pub struct HitRecord {
@@ -13,7 +13,7 @@ pub struct HitRecord {
     pub normal: Vec3A,
     pub t: f32,
     pub tex_coords: (f32, f32),
-    pub material: Rc<dyn Material>,
+    pub material: Arc<dyn Material>,
     pub front_face: bool
 }
 
@@ -24,7 +24,7 @@ impl HitRecord {
             normal: Vec3A::ZERO,
             t: f32::INFINITY,
             tex_coords: (0.0, 0.0),
-            material: Rc::new(NoMaterial{}),
+            material: Arc::new(NoMaterial{}),
             front_face: false
         }
     }

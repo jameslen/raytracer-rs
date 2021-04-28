@@ -26,7 +26,7 @@ impl AABB {
         let t_min = f32::max(f32::max(f32::min(min.x, max.x), f32::min(min.y, max.y)), f32::min(min.z, max.z));
         let t_max = f32::min(f32::min(f32::max(min.x, max.x), f32::max(min.y, max.y)), f32::max(min.z, max.z));
 
-        if t_max < 0.0 || t_min > t_max {
+        if t_max < 0.0 || t_min >= t_max {
             return false;
         }
         return true;

@@ -9,7 +9,7 @@ use crate::aabb::AABB;
 
 use crate::texture::*;
 
-use std::rc::Rc;
+use std::sync::Arc;
 
 pub trait Hittable {
     fn intersect(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord>;
@@ -45,7 +45,7 @@ impl<T: Hittable> TransformedObject<T> {
         println!("pre: min: {:?}, max: {:?}", base_aabb.min, base_aabb.max);
         let min = transform.transform_point3a(base_aabb.min);
         let max = transform.transform_point3a(base_aabb.max);
-        println!("pre: min: {:?}, max: {:?}", min, max);
+        println!("post: min: {:?}, max: {:?}", min, max);
 
         AABB{
             min: min.min(max),
@@ -93,7 +93,7 @@ impl<T: Hittable> Hittable for TransformedObject<T> {
 pub struct Sphere {
     pub center: Vec3A,
     pub radius: f32,
-    pub material: Rc::<dyn Material>
+    pub material: Arc::<dyn Material>
 }
 
 impl Sphere {
@@ -101,7 +101,7 @@ impl Sphere {
         Sphere {
             center: center,
             radius: radius,
-            material: Rc::new(material)
+            material: Arc::new(material)
         }
     }
 }
@@ -164,7 +164,7 @@ pub struct MovingSphere {
     pub radius: f32,
     pub time_start: f32,
     pub time_end: f32,
-    pub material: Rc::<dyn Material>
+    pub material: Arc::<dyn Material>
 }
 
 impl MovingSphere {
@@ -175,7 +175,7 @@ impl MovingSphere {
             time_start: time_start,
             time_end: time_end,
             radius: radius,
-            material: Rc::new(material)
+            material: Arc::new(material)
         }
     }
 
@@ -246,7 +246,7 @@ pub struct XYRect {
     min: Vec2,
     max: Vec2,
     offset: f32,
-    pub material: Rc::<dyn Material>
+    pub material: Arc::<dyn Material>
 }
 
 impl XYRect {
@@ -255,7 +255,7 @@ impl XYRect {
             min: min,
             max: max,
             offset: offset,
-            material: Rc::new(material)
+            material: Arc::new(material)
         }
     }
 }
@@ -301,7 +301,7 @@ pub struct XZRect {
     min: Vec2,
     max: Vec2,
     offset: f32,
-    pub material: Rc::<dyn Material>
+    pub material: Arc::<dyn Material>
 }
 
 impl XZRect {
@@ -310,7 +310,7 @@ impl XZRect {
             min: min,
             max: max,
             offset: offset,
-            material: Rc::new(material)
+            material: Arc::new(material)
         }
     }
 }
@@ -356,7 +356,7 @@ pub struct YZRect {
     min: Vec2,
     max: Vec2,
     offset: f32,
-    pub material: Rc::<dyn Material>
+    pub material: Arc::<dyn Material>
 }
 
 impl YZRect {
@@ -365,7 +365,7 @@ impl YZRect {
             min: min,
             max: max,
             offset: offset,
-            material: Rc::new(material)
+            material: Arc::new(material)
         }
     }
 }
@@ -410,7 +410,7 @@ impl Hittable for YZRect {
 pub struct Box {
     min: Vec3A,
     max: Vec3A,
-    pub material: Rc::<dyn Material>
+    pub material: Arc::<dyn Material>
 }
 
 impl Box {
@@ -418,7 +418,7 @@ impl Box {
         Box{ 
             min: Vec3A::ZERO,
             max: Vec3A::new(width, height, depth),
-            material: Rc::new(material)
+            material: Arc::new(material)
         }
     }
 
@@ -426,7 +426,7 @@ impl Box {
         Box{
             min: min,
             max: max,
-            material: Rc::new(color)
+            material: Arc::new(color)
         }
     }
 }
@@ -448,15 +448,15 @@ fn axis_max(first: (f32, usize), second: (f32, usize)) -> (f32, usize) {
 }
 
 impl Hittable for Box {
-    fn intersect(&self, ray: &Ray, _t_min: f32, _t_max: f32) -> Option<HitRecord> {
+    fn intersect(&self, ray: &Ray, _t_min: f32, t_max: f32) -> Option<HitRecord> {
         let recip = ray.direction.recip();
         let min = (self.min - ray.origin) * recip;
         let max = (self.max - ray.origin) * recip;
 
-        let (t_min, min_axis) = axis_max(axis_max(axis_min((min.x, 0), (max.x, 1)), axis_min((min.y, 2), (max.y, 3))), axis_min((min.z, 4), (max.z, 5)));
-        let (t_max, _)        = axis_min(axis_min(axis_max((min.x, 0), (max.x, 1)), axis_max((min.y, 2), (max.y, 3))), axis_max((min.z, 4), (max.z, 5)));
+        let (t_min0, min_axis) = axis_max(axis_max(axis_min((min.x, 0), (max.x, 1)), axis_min((min.y, 2), (max.y, 3))), axis_min((min.z, 4), (max.z, 5)));
+        let (t_max0, _)        = axis_min(axis_min(axis_max((min.x, 0), (max.x, 1)), axis_max((min.y, 2), (max.y, 3))), axis_max((min.z, 4), (max.z, 5)));
 
-        if t_max < 0.0 || t_min > t_max {
+        if t_max0 <= 0.0 || t_min0 > t_max0 || t_min0 > t_max {
             return None;
         }
         
@@ -473,20 +473,20 @@ impl Hittable for Box {
             }
         };
 
-        let color = match min_axis {
-            0 => Vec3A::X + Vec3A::Y,
-            1 =>  Vec3A::X,
-            2 => Vec3A::Y + Vec3A::Z,
-            3 =>  Vec3A::Y,
-            4 =>  Vec3A::Z + Vec3A::X,
-            5 =>  Vec3A::Z,
-            _ =>  {
-                println!("WTF");
-                Vec3A::ZERO
-            }
-        };
+        // let color = match min_axis {
+        //     0 => Vec3A::X + Vec3A::Y,
+        //     1 =>  Vec3A::X,
+        //     2 => Vec3A::Y + Vec3A::Z,
+        //     3 =>  Vec3A::Y,
+        //     4 =>  Vec3A::Z + Vec3A::X,
+        //     5 =>  Vec3A::Z,
+        //     _ =>  {
+        //         println!("WTF");
+        //         Vec3A::ZERO
+        //     }
+        // };
 
-        let point = ray.at(t_min);
+        let point = ray.at(t_min0);
         let delta = point / self.max;
         let tex_coords = match min_axis {
             0 => { // X_MIN
@@ -513,15 +513,13 @@ impl Hittable for Box {
             }
         };
 
-
-
         let mut record = HitRecord{
-            t: t_min,
+            t: t_min0,
             point: point,
             tex_coords: tex_coords, // TODO: Impl tex coords
             normal: normal,
-            //material: self.material.clone(),
-            material: Rc::new(LambertianMat::from_texture(SolidColor{ color: Vec3A::new(tex_coords.0, tex_coords.1, 0.0) })),
+            material: self.material.clone(),
+            //material: Arc::new(LambertianMat::from_texture(SolidColor{ color: color })),
             front_face: true
         };
 

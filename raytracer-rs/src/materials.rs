@@ -6,7 +6,7 @@ use crate::texture::*;
 
 use crate::vec3_helpers;
 
-use std::rc::Rc;
+use std::sync::Arc;
 
 use glam::*;
 
@@ -19,17 +19,17 @@ pub trait Material {
 
 #[derive(Clone)]
 pub struct LambertianMat {
-    albedo: Rc<dyn Texture>
+    albedo: Arc<dyn Texture>
 }
 
 impl LambertianMat {
     pub fn from_texture<T: 'static + Texture>(albedo: T) -> Self {
         LambertianMat{
-            albedo: Rc::new(albedo)
+            albedo: Arc::new(albedo)
         }
     }
 
-    pub fn from_shared_texture(albedo: Rc<dyn Texture>) -> Self {
+    pub fn from_shared_texture(albedo: Arc<dyn Texture>) -> Self {
         LambertianMat {
             albedo: albedo
         }
@@ -37,7 +37,7 @@ impl LambertianMat {
 
     pub fn from_color(albedo: Vec3A) -> Self {
         LambertianMat{
-            albedo: Rc::new(SolidColor{color: albedo})
+            albedo: Arc::new(SolidColor{color: albedo})
         }
     }
 }
@@ -159,13 +159,13 @@ impl Material for NoMaterial {
 }
 
 pub struct DiffuseLight {
-    emit: Rc<dyn Texture>
+    emit: Arc<dyn Texture>
 }
 
 impl DiffuseLight {
     pub fn from_texture<T: 'static + Texture>(texture: T) -> Self {
         DiffuseLight {
-            emit: Rc::new(texture)
+            emit: Arc::new(texture)
         }
     }
     pub fn from_color(color: Vec3A) -> Self {
