@@ -183,48 +183,48 @@ fn cornell_box() -> Scene {
     let red   = Vec3A::new(0.65, 0.05, 0.05);
     let light = Vec3A::new(15.0, 15.0, 15.0);
 
-    // //s.add_shape(YZRect::new(Vec2::new(0.0, 0.0), Vec2::new(555.0, 555.0), 555.0, LambertianMat::from_color(green)));
-    // //s.add_shape(YZRect::new(Vec2::new(0.0, 0.0), Vec2::new(555.0, 555.0), 0.0, LambertianMat::from_color(red)));
-    // s.add_shape(XZRect::new(Vec2::new(213.0, 227.0), Vec2::new(343.0, 332.0), 554.0, DiffuseLight::from_color(light)));
-    // //s.add_shape(XZRect::new(Vec2::new(0.0, 0.0), Vec2::new(555.0, 555.0), 555.0, LambertianMat::from_color(white)));
-    // //s.add_shape(XZRect::new(Vec2::new(0.0, 0.0), Vec2::new(555.0, 555.0), 0.0, LambertianMat::from_color(white)));
-    // //s.add_shape(XYRect::new(Vec2::new(0.0, 0.0), Vec2::new(555.0, 555.0), 555.0, LambertianMat::from_color(white)));
+    s.add_shape(YZRect::new(Vec2::new(0.0, 0.0), Vec2::new(555.0, 555.0), 555.0, LambertianMat::from_color(green)));
+    s.add_shape(YZRect::new(Vec2::new(0.0, 0.0), Vec2::new(555.0, 555.0), 0.0, LambertianMat::from_color(red)));
+    s.add_shape(XZRect::new(Vec2::new(213.0, 227.0), Vec2::new(343.0, 332.0), 554.0, DiffuseLight::from_color(light)));
+    s.add_shape(XZRect::new(Vec2::new(0.0, 0.0), Vec2::new(555.0, 555.0), 555.0, LambertianMat::from_color(white)));
+    s.add_shape(XZRect::new(Vec2::new(0.0, 0.0), Vec2::new(555.0, 555.0), 0.0, LambertianMat::from_color(white)));
+    s.add_shape(XYRect::new(Vec2::new(0.0, 0.0), Vec2::new(555.0, 555.0), 555.0, LambertianMat::from_color(white)));
 
-    // let b2 = Box::new(165.0, 165.0, 165.0, LambertianMat::from_color(white));
-    // let rotation = Mat4::from_rotation_y(degree_to_rad(-18.0));
-    // let translation = Mat4::from_translation(Vec3::new(130.0, 0.0, 65.0));
-    // let final_transform = translation * rotation;
-    // s.add_shape(TransformedObject::new(b2, final_transform));
+    let b2 = Box::new(165.0, 165.0, 165.0, LambertianMat::from_color(white));
+    let rotation = Mat4::from_rotation_y(degree_to_rad(-18.0));
+    let translation = Mat4::from_translation(Vec3::new(130.0, 0.0, 65.0));
+    let final_transform = translation * rotation;
+    s.add_shape(TransformedObject::new(b2, final_transform));
 
-    // let b1 = Box::new(165.0, 330.0, 165.0, LambertianMat::from_color(white));
-    // let rotation = Mat4::from_rotation_y(degree_to_rad(15.0));
-    // let translation = Mat4::from_translation(Vec3::new(265.0, 0.0, 305.0));
-    // let final_transform = translation * rotation;
-    //s.add_shape(TransformedObject::new(b1, final_transform));
+    let b1 = Box::new(165.0, 330.0, 165.0, LambertianMat::from_color(white));
+    let rotation = Mat4::from_rotation_y(degree_to_rad(15.0));
+    let translation = Mat4::from_translation(Vec3::new(265.0, 0.0, 305.0));
+    let final_transform = translation * rotation;
+    s.add_shape(TransformedObject::new(b1, final_transform));
 
-    // Light
-    let min = Vec3A::new(213.0, 553.999, 227.0);
-    let max = Vec3A::new(343.0, 554.001, 332.0);
-    let range = max - min;
-    let b1 = Box::new(range.x, range.y, range.z, LambertianMat::from_color(white));
-    let translation = Mat4::from_translation(Vec3::new(min.x, min.y, min.z));
-    s.add_shape(TransformedObject::new(b1, translation));
+    // // Light
+    // let min = Vec3A::new(213.0, 553.999, 227.0);
+    // let max = Vec3A::new(343.0, 554.001, 332.0);
+    // let range = max - min;
+    // let b1 = Box::new(range.x, range.y, range.z, LambertianMat::from_color(white));
+    // let translation = Mat4::from_translation(Vec3::new(min.x, min.y, min.z));
+    // s.add_shape(TransformedObject::new(b1, translation));
 
-    // Small Box
-    let min = Vec3A::new(130.0, 0.0, 65.0);
-    let max = Vec3A::new(235.93652, 165.0, 272.91214);
-    let range = max - min;
-    let b1 = Box::new(range.x, range.y, range.z, LambertianMat::from_color(red));
-    let translation = Mat4::from_translation(Vec3::new(min.x, min.y, min.z));
-    s.add_shape(TransformedObject::new(b1, translation));
+    // // Small Box
+    // let min = Vec3A::new(130.0, 0.0, 65.0);
+    // let max = Vec3A::new(235.93652, 165.0, 272.91214);
+    // let range = max - min;
+    // let b1 = Box::new(range.x, range.y, range.z, LambertianMat::from_color(red));
+    // let translation = Mat4::from_translation(Vec3::new(min.x, min.y, min.z));
+    // s.add_shape(TransformedObject::new(b1, translation));
 
-    // Large Box
-    let min = Vec3A::new(265.0, 0.0, 305.0);
-    let max = Vec3A::new(467.0829, 330.0, 421.6726);
-    let range = max - min;
-    let b1 = Box::new(range.x, range.y, range.z, LambertianMat::from_color(green));
-    let translation = Mat4::from_translation(Vec3::new(min.x, min.y, min.z));
-    s.add_shape(TransformedObject::new(b1, translation));
+    // // Large Box
+    // let min = Vec3A::new(265.0, 0.0, 305.0);
+    // let max = Vec3A::new(467.0829, 330.0, 421.6726);
+    // let range = max - min;
+    // let b1 = Box::new(range.x, range.y, range.z, LambertianMat::from_color(green));
+    // let translation = Mat4::from_translation(Vec3::new(min.x, min.y, min.z));
+    // s.add_shape(TransformedObject::new(b1, translation));
 
     return s;
 }
@@ -341,8 +341,8 @@ fn main() {
             target = Vec3A::new(278.0, 278.0, 0.0);
             fov = degree_to_rad(40.0);
             aperture = 0.0;
-            //background = Vec3A::ZERO;
-            background = Vec3A::new(0.7, 0.8, 1.0);
+            background = Vec3A::ZERO;
+            //background = Vec3A::new(0.7, 0.8, 1.0);
         }
     }
 
@@ -351,12 +351,6 @@ fn main() {
     let vup = Vec3A::Y;
     focus_distance = 10.0;
     let camera = Camera::new(origin, target, vup, fov, aspect_ratio, aperture, focus_distance, 0.0, 1.0); 
-
-    println!("");
-    for obj in world.shapes.iter() {
-        let aabb = obj.bounding_box(0.0, 1.0).unwrap();
-        println!("post: min: {:?}, max: {:?}", aabb.min, aabb.max);
-    }
 
     let bvh = BVHNode::from_scene(&world, 0.0, 1.0);
 

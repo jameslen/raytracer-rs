@@ -42,14 +42,21 @@ impl<T: Hittable> TransformedObject<T> {
 
     fn generate_aabb(object: &T, transform: Mat4) -> AABB {
         let base_aabb = object.bounding_box(0.0, 1.0).unwrap();
-        println!("pre: min: {:?}, max: {:?}", base_aabb.min, base_aabb.max);
-        let min = transform.transform_point3a(base_aabb.min);
-        let max = transform.transform_point3a(base_aabb.max);
-        println!("post: min: {:?}, max: {:?}", min, max);
+        let min = base_aabb.min;
+        let max = base_aabb.max; 
+        let p0 = transform.transform_point3a(min);
+        let p1 = transform.transform_point3a(Vec3A::new(max.x, min.y, min.z));
+        let p2 = transform.transform_point3a(Vec3A::new(max.x, min.y, max.z));
+        let p3 = transform.transform_point3a(Vec3A::new(min.x, min.y, max.z));
+
+        let p4 = transform.transform_point3a(Vec3A::new(min.x, max.y, min.z));
+        let p5 = transform.transform_point3a(Vec3A::new(max.x, max.y, min.z));
+        let p6 = transform.transform_point3a(max);
+        let p7 = transform.transform_point3a(Vec3A::new(min.x, max.y, max.z));
 
         AABB{
-            min: min.min(max),
-            max: max.max(min)
+            min: p0.min(p1.min(p2.min(p3.min(p4.min(p5.min(p6.min(p7))))))),
+            max: p0.max(p1.max(p2.max(p3.max(p4.max(p5.max(p6.max(p7))))))),
         }
     }
 }

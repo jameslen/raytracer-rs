@@ -116,8 +116,6 @@ impl BVHNode {
 
         root.bounding_box = AABB::surrounding_box(&left_aabb, &right_aabb);
 
-        println!("Count {}, Box min: {:?}, max: {:?}", span, root.bounding_box.min, root.bounding_box.max);
-
         return root;
     }
 
