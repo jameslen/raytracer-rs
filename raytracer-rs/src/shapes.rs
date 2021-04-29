@@ -6,6 +6,7 @@ use crate::ray::Ray;
 use crate::hit_record::HitRecord;
 use crate::materials::*;//Material;
 use crate::aabb::AABB;
+use crate::scene::Scene;
 
 use std::sync::Arc;
 use rand::prelude::*;
@@ -264,6 +265,15 @@ impl XYRect {
             material: Arc::new(material)
         }
     }
+
+    pub fn new_with_material(min: Vec2, max: Vec2, offset: f32, material: Arc::<dyn Material>) -> Self {
+        Self {
+            min: min,
+            max: max,
+            offset: offset,
+            material: material.clone()
+        }
+    }
 }
 
 impl Hittable for XYRect {
@@ -317,6 +327,15 @@ impl XZRect {
             max: max,
             offset: offset,
             material: Arc::new(material)
+        }
+    }
+
+    pub fn new_with_material(min: Vec2, max: Vec2, offset: f32, material: Arc::<dyn Material>) -> Self {
+        Self {
+            min: min,
+            max: max,
+            offset: offset,
+            material: material.clone()
         }
     }
 }
@@ -374,6 +393,15 @@ impl YZRect {
             material: Arc::new(material)
         }
     }
+
+    pub fn new_with_material(min: Vec2, max: Vec2, offset: f32, material: Arc::<dyn Material>) -> Self {
+        Self {
+            min: min,
+            max: max,
+            offset: offset,
+            material: material.clone()
+        }
+    }
 }
 
 impl Hittable for YZRect {
@@ -409,6 +437,52 @@ impl Hittable for YZRect {
         Some(AABB {
             min: Vec3A::new(self.offset - 0.0001, self.min.x, self.min.y),
             max: Vec3A::new(self.offset + 0.0001, self.max.x, self.max.y),
+        })
+    }
+}
+
+pub struct Box2 {
+    min: Vec3A,
+    max: Vec3A,
+    sides: Scene,
+    pub material: Arc::<dyn Material>
+}
+
+impl Box2 {
+    pub fn new<T: 'static + Material>(width: f32, height: f32, depth: f32, material: T) -> Self {
+        Box2::full_box(Vec3A::ZERO, Vec3A::new(width, height, depth), Arc::new(material))
+    }
+
+    pub fn full_box(min: Vec3A, max: Vec3A, color: Arc<dyn Material>) -> Self{
+        let mut sides = Scene::new();
+
+        sides.add_shape(XYRect::new_with_material(Vec2::new(min.x, min.y), Vec2::new(max.x, max.y), min.z, color.clone()));
+        sides.add_shape(XYRect::new_with_material(Vec2::new(min.x, min.y), Vec2::new(max.x, max.y), max.z, color.clone()));
+
+        sides.add_shape(XZRect::new_with_material(Vec2::new(min.x, min.z), Vec2::new(max.x, max.z), min.y, color.clone()));
+        sides.add_shape(XZRect::new_with_material(Vec2::new(min.x, min.z), Vec2::new(max.x, max.z), max.y, color.clone()));
+
+        sides.add_shape(YZRect::new_with_material(Vec2::new(min.y, min.z), Vec2::new(max.y, max.z), min.x, color.clone()));
+        sides.add_shape(YZRect::new_with_material(Vec2::new(min.y, min.z), Vec2::new(max.y, max.z), max.x, color.clone()));
+
+        Self {
+            min: min,
+            max: max,
+            sides: sides,
+            material: color.clone()
+        }
+    }
+}
+
+impl Hittable for Box2 {
+    fn intersect(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
+        self.sides.intersect(ray, t_min, t_max)
+    }
+
+    fn bounding_box(&self, _t0: f32, _t1: f32) -> Option<AABB> {
+        Some(AABB{
+            min: self.min,
+            max: self.max
         })
     }
 }

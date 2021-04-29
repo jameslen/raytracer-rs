@@ -189,13 +189,13 @@ fn cornell_box() -> Scene {
     s.add_shape(XZRect::new(Vec2::new(0.0, 0.0), Vec2::new(555.0, 555.0), 0.0, LambertianMat::from_color(white)));
     s.add_shape(XYRect::new(Vec2::new(0.0, 0.0), Vec2::new(555.0, 555.0), 555.0, LambertianMat::from_color(white)));
 
-    let b2 = Box::new(165.0, 165.0, 165.0, LambertianMat::from_color(white));
+    let b2 = Box2::new(165.0, 165.0, 165.0, LambertianMat::from_color(white));
     let rotation = Mat4::from_rotation_y(degree_to_rad(-18.0));
     let translation = Mat4::from_translation(Vec3::new(130.0, 0.0, 65.0));
     let final_transform = translation * rotation;
     s.add_shape(TransformedObject::new(b2, final_transform));
 
-    let b1 = Box::new(165.0, 330.0, 165.0, LambertianMat::from_color(white));
+    let b1 = Box2::new(165.0, 330.0, 165.0, LambertianMat::from_color(white));
     let rotation = Mat4::from_rotation_y(degree_to_rad(15.0));
     let translation = Mat4::from_translation(Vec3::new(265.0, 0.0, 305.0));
     let final_transform = translation * rotation;
@@ -219,7 +219,7 @@ fn cornell_smoke() -> Scene {
     s.add_shape(XZRect::new(Vec2::new(0.0, 0.0), Vec2::new(555.0, 555.0), 0.0, LambertianMat::from_color(white)));
     s.add_shape(XYRect::new(Vec2::new(0.0, 0.0), Vec2::new(555.0, 555.0), 555.0, LambertianMat::from_color(white)));
 
-    let b2 = Box::new(165.0, 165.0, 165.0, LambertianMat::from_color(white));
+    let b2 = Box2::new(165.0, 165.0, 165.0, LambertianMat::from_color(white));
     let rotation = Mat4::from_rotation_y(degree_to_rad(-18.0));
     let translation = Mat4::from_translation(Vec3::new(130.0, 0.0, 65.0));
     let final_transform = translation * rotation;
@@ -227,7 +227,7 @@ fn cornell_smoke() -> Scene {
     //s.add_shape(box2);
     s.add_shape(ConstantMedium::from_color(box2, 0.05, Vec3A::ONE));
 
-    let b1 = Box::new(165.0, 330.0, 165.0, LambertianMat::from_color(white));
+    let b1 = Box2::new(165.0, 330.0, 165.0, LambertianMat::from_color(white));
     let rotation = Mat4::from_rotation_y(degree_to_rad(15.0));
     let translation = Mat4::from_translation(Vec3::new(265.0, 0.0, 305.0));
     let final_transform = translation * rotation;
@@ -258,7 +258,7 @@ fn final_scene() -> Scene {
             let y1: f32 = rng.gen_range(1.0..101.0);
             let z1 = z0 + w;
 
-            boxes.add_shape(Box::full_box(Vec3A::new(x0, y0, z0), Vec3A::new(x1, y1, z1), ground.clone()));
+            boxes.add_shape(Box2::full_box(Vec3A::new(x0, y0, z0), Vec3A::new(x1, y1, z1), ground.clone()));
         }
     }
 
@@ -268,25 +268,25 @@ fn final_scene() -> Scene {
     let light = DiffuseLight::from_color(light_color);
     s.add_shape(XZRect::new(Vec2::new(123.0,147.0), Vec2::new(423.0,412.0), 554.0, light));
 
-    // let center1 = Vec3A::new(400.0, 400.0, 200.0);
-    // let center2 = center1 + Vec3A::new(30.0, 0.0, 0.0);
-    // let moving_mat = LambertianMat::from_color(Vec3A::new(0.7, 0.3, 0.1));
-    // s.add_shape(MovingSphere::new(center1, center2, 50.0, 0.0, 1.0, moving_mat));
+    let center1 = Vec3A::new(400.0, 400.0, 200.0);
+    let center2 = center1 + Vec3A::new(30.0, 0.0, 0.0);
+    let moving_mat = LambertianMat::from_color(Vec3A::new(0.7, 0.3, 0.1));
+    s.add_shape(MovingSphere::new(center1, center2, 50.0, 0.0, 1.0, moving_mat));
 
-    // s.add_shape(Sphere::new(Vec3A::new(260.0, 150.0, 45.0), 50.0, DielectricMat::new(1.5)));
-    // s.add_shape(Sphere::new(Vec3A::new(0.0, 150.0, 145.0), 50.0, MetalMat::new(Vec3A::new(0.8, 0.8, 0.9), 1.0)));
+    s.add_shape(Sphere::new(Vec3A::new(260.0, 150.0, 45.0), 50.0, DielectricMat::new(1.5)));
+    s.add_shape(Sphere::new(Vec3A::new(0.0, 150.0, 145.0), 50.0, MetalMat::new(Vec3A::new(0.8, 0.8, 0.9), 1.0)));
 
-    // let boundary = Sphere::new(Vec3A::new(360.0,150.0,145.0), 70.0, DielectricMat::new(1.5));
-    // s.add_shape(boundary);
-    // let boundary = Sphere::new(Vec3A::new(360.0,150.0,145.0), 70.0, DielectricMat::new(1.5));
-    // s.add_shape(ConstantMedium::from_color(boundary, 0.2, Vec3A::new(0.2, 0.4, 0.9)));
-    // let boundary = Sphere::new(Vec3A::new(0.0, 0.0, 0.0), 5000.0, DielectricMat::new(1.5));
-    // s.add_shape(ConstantMedium::from_color(boundary, 0.001, Vec3A::new(1.0,1.0,1.0)));
+    let boundary = Sphere::new(Vec3A::new(360.0,150.0,145.0), 70.0, DielectricMat::new(1.5));
+    s.add_shape(boundary);
+    let boundary = Sphere::new(Vec3A::new(360.0,150.0,145.0), 70.0, DielectricMat::new(1.5));
+    s.add_shape(ConstantMedium::from_color(boundary, 0.2, Vec3A::new(0.2, 0.4, 0.9)));
+    let boundary = Sphere::new(Vec3A::new(0.0, 0.0, 0.0), 5000.0, DielectricMat::new(1.5));
+    s.add_shape(ConstantMedium::from_color(boundary, 0.001, Vec3A::new(1.0,1.0,1.0)));
 
-    // let emat = LambertianMat::from_texture(ImageTexture::new(String::from("earthmap.jpg")));
-    // s.add_shape(Sphere::new(Vec3A::new(400.0,200.0,400.0), 100.0, emat));
-    // let pertext = NoiseTexture::new(0.1);
-    // s.add_shape(Sphere::new(Vec3A::new(220.0,280.0,300.0), 80.0, LambertianMat::from_texture(pertext)));
+    let emat = LambertianMat::from_texture(ImageTexture::new(String::from("earthmap.jpg")));
+    s.add_shape(Sphere::new(Vec3A::new(400.0,200.0,400.0), 100.0, emat));
+    let pertext = NoiseTexture::new(0.1);
+    s.add_shape(Sphere::new(Vec3A::new(220.0,280.0,300.0), 80.0, LambertianMat::from_texture(pertext)));
 
     let mut boxes2 = Scene::new();
     
@@ -353,7 +353,7 @@ fn main() {
     let background: Vec3A;
 
     let quality = ImageQuality::Cornell;
-    let scene = SceneType::FinalScene;
+    let scene = SceneType::CornellBox;
 
     match quality {
         ImageQuality::Low => {
