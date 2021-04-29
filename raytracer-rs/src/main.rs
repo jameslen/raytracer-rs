@@ -17,7 +17,6 @@ mod perlin;
 
 use std::time::Instant;
 use std::sync::Arc;
-use std::slice;
 
 use image::*;
 use glam::*;
@@ -202,29 +201,77 @@ fn cornell_box() -> Scene {
     let final_transform = translation * rotation;
     s.add_shape(TransformedObject::new(b1, final_transform));
 
-    // // Light
-    // let min = Vec3A::new(213.0, 553.999, 227.0);
-    // let max = Vec3A::new(343.0, 554.001, 332.0);
-    // let range = max - min;
-    // let b1 = Box::new(range.x, range.y, range.z, LambertianMat::from_color(white));
-    // let translation = Mat4::from_translation(Vec3::new(min.x, min.y, min.z));
-    // s.add_shape(TransformedObject::new(b1, translation));
+    return s;
+}
 
-    // // Small Box
-    // let min = Vec3A::new(130.0, 0.0, 65.0);
-    // let max = Vec3A::new(235.93652, 165.0, 272.91214);
-    // let range = max - min;
-    // let b1 = Box::new(range.x, range.y, range.z, LambertianMat::from_color(red));
-    // let translation = Mat4::from_translation(Vec3::new(min.x, min.y, min.z));
-    // s.add_shape(TransformedObject::new(b1, translation));
+fn cornell_smoke() -> Scene {
+    let mut s = Scene::new();
 
-    // // Large Box
-    // let min = Vec3A::new(265.0, 0.0, 305.0);
-    // let max = Vec3A::new(467.0829, 330.0, 421.6726);
-    // let range = max - min;
-    // let b1 = Box::new(range.x, range.y, range.z, LambertianMat::from_color(green));
-    // let translation = Mat4::from_translation(Vec3::new(min.x, min.y, min.z));
-    // s.add_shape(TransformedObject::new(b1, translation));
+    let white = Vec3A::new(0.73, 0.73, 0.73);
+    let green = Vec3A::new(0.12, 0.45, 0.15);
+    let red   = Vec3A::new(0.65, 0.05, 0.05);
+    let light = Vec3A::new(7.0, 7.0, 7.0);
+
+    s.add_shape(YZRect::new(Vec2::new(0.0, 0.0), Vec2::new(555.0, 555.0), 555.0, LambertianMat::from_color(green)));
+    s.add_shape(YZRect::new(Vec2::new(0.0, 0.0), Vec2::new(555.0, 555.0), 0.0, LambertianMat::from_color(red)));
+    s.add_shape(XZRect::new(Vec2::new(113.0, 127.0), Vec2::new(443.0, 432.0), 554.0, DiffuseLight::from_color(light)));
+    s.add_shape(XZRect::new(Vec2::new(0.0, 0.0), Vec2::new(555.0, 555.0), 555.0, LambertianMat::from_color(white)));
+    s.add_shape(XZRect::new(Vec2::new(0.0, 0.0), Vec2::new(555.0, 555.0), 0.0, LambertianMat::from_color(white)));
+    s.add_shape(XYRect::new(Vec2::new(0.0, 0.0), Vec2::new(555.0, 555.0), 555.0, LambertianMat::from_color(white)));
+
+    let b2 = Box::new(165.0, 165.0, 165.0, LambertianMat::from_color(white));
+    let rotation = Mat4::from_rotation_y(degree_to_rad(-18.0));
+    let translation = Mat4::from_translation(Vec3::new(130.0, 0.0, 65.0));
+    let final_transform = translation * rotation;
+    let box2 = TransformedObject::new(b2, final_transform);
+    //s.add_shape(box2);
+    s.add_shape(ConstantMedium::from_color(box2, 0.05, Vec3A::ONE));
+
+    let b1 = Box::new(165.0, 330.0, 165.0, LambertianMat::from_color(white));
+    let rotation = Mat4::from_rotation_y(degree_to_rad(15.0));
+    let translation = Mat4::from_translation(Vec3::new(265.0, 0.0, 305.0));
+    let final_transform = translation * rotation;
+    let box1 = TransformedObject::new(b1, final_transform);
+    s.add_shape(ConstantMedium::from_color(box1, 0.5, Vec3A::ZERO));
+    
+    return s;
+}
+
+fn final_scene() -> Scene {
+    let mut s = Scene::new();
+
+    let mut boxes = Scene::new();
+
+    let ground = Arc::new(LambertianMat::from_color(Vec3A::new(0.48, 0.83, 0.53)));
+
+    let boxes_per_side = 20;
+
+    let mut rng = rand::thread_rng();
+
+    for i in 0..boxes_per_side {
+        for j in 0..boxes_per_side {
+            let w = 100.0;
+            let x0 = -1000.0 + i as f32 * w;
+            let z0 = -1000.0 + j as f32 * w;
+            let y0 = 0.0;
+            let x1 = x0 + w;
+            let y1: f32 = rng.gen_range(1.0..101.0);
+            let z1 = z0 + w;
+
+            boxes.add_shape(Box::full_box(Vec3A::new(x0, y0, z0), Vec3A::new(x1, y1, z0), ground.clone()));
+        }
+    }
+
+    s.add_shape(BHVNode::new(boxes));
+
+    let light_color = Vec3A::new(7.0, 7.0, 7.0);
+    let light = DiffuseLight::from_color(light);
+    s.add_shape(XZRect::new(Vec2::new(123.0,147.0), Vec2::new(423.0,412.0), 554.0, light));
+
+    let center1 = Vec3A::new(400.0, 400.0, 200.0);
+    let center2 = center + Vec3A::new(30, 0.0, 0.0);
+    let moving_mat = LambertianMat::from_color(Vec3A::new(0.7, 0.3, 0.1));
+    s.add_shape(MovingSphere::new(center1, center2, 50.0, 0.0, 1.0, moving_mat));
 
     return s;
 }
@@ -233,11 +280,16 @@ fn float_to_u8_color(f: f32) -> u8 {
     (256.0 * f32::clamp(f, 0.0, 0.999)) as u8
 }
 
+fn vec3_to_rgb(color: Vec3A) -> Rgb<u8> {
+    image::Rgb::from_channels(float_to_u8_color(color.x), float_to_u8_color(color.y), float_to_u8_color(color.z), 0)
+}
+
 #[allow(dead_code)]
 enum ImageQuality {
     Low,
     High,
-    Cornell
+    Cornell,
+    Final
 }
 
 #[allow(dead_code)]
@@ -247,7 +299,9 @@ enum SceneType {
     PerlinSpheres,
     Earth,
     SimpleLight,
-    CornellBox
+    CornellBox,
+    CornellSmoke,
+    FinalScene
 }
 
 fn main() {
@@ -268,8 +322,8 @@ fn main() {
 
     let background: Vec3A;
 
-    let quality = ImageQuality::Cornell;
-    let scene = SceneType::CornellBox;
+    let quality = ImageQuality::Final;
+    let scene = SceneType::FinalScene;
 
     match quality {
         ImageQuality::Low => {
@@ -288,6 +342,12 @@ fn main() {
             aspect_ratio = 1.0;
             image_width = 600;
             samples_per_pixel = 200;
+            max_depth = 50;
+        },
+        ImageQuality::Final => {
+            aspect_ratio = 1.0;
+            image_width = 800;
+            samples_per_pixel = 10000;
             max_depth = 50;
         }
     }
@@ -343,10 +403,25 @@ fn main() {
             aperture = 0.0;
             background = Vec3A::ZERO;
             //background = Vec3A::new(0.7, 0.8, 1.0);
+        },
+        SceneType::CornellSmoke => {
+            world = cornell_smoke();
+            origin = Vec3A::new(278.0, 278.0, -800.0);
+            target = Vec3A::new(278.0, 278.0, 0.0);
+            fov = degree_to_rad(40.0);
+            aperture = 0.0;
+            background = Vec3A::ZERO;
+            //background = Vec3A::new(0.7, 0.8, 1.0);
+        },
+        SceneType::FinalScene => {
+            world = final_scene();
+            origin = Vec3A::new(478.0, 278.0, -600.0);
+            target = Vec3A::new(278.0, 278.0, 0.0);
+            fov = degree_to_rad(40.0);
+            aperture = 0.0;
+            background = Vec3A::ZERO;
         }
     }
-
-    
 
     let vup = Vec3A::Y;
     focus_distance = 10.0;
@@ -354,34 +429,30 @@ fn main() {
 
     let bvh = BVHNode::from_scene(&world, 0.0, 1.0);
 
-    let output: RgbImage = ImageBuffer::new(image_width, image_height);
-
     let inv_samples = 1.0 / samples_per_pixel as f32;
 
     let now = Instant::now();
-    let x: Vec<(u32, u32, (u8,u8,u8))> = output
-        .enumerate_pixels()
-        .map(|(i, j, pixel)| {
-            let channels = pixel.channels4();
-            (i, j, (channels.0, channels.1, channels.2))
-        })
-        .collect();
-    let par: Vec<Rgb<u8>> = x.par_iter().map(|(i, j, pixel)| {
-        let mut rng = rand::thread_rng();
-        let mut color = Vec3A::ZERO;
-        for _sample in 0..samples_per_pixel {
-            let u = (*i as f32 + rng.gen::<f32>()) / (image_width - 1) as f32;
-            let v = ((image_height - 1 - *j) as f32 + rng.gen::<f32>()) / (image_height - 1) as f32;
+    let par: Vec<Rgb<u8>> = (0..image_width * image_height)
+        .map(|i| (i % image_width, i / image_width))
+        .collect::<Vec<(u32, u32)>>()
+        .par_iter()
+        .map(|(i, j)| {
+            let mut rng = rand::thread_rng();
+            let color = (0..samples_per_pixel)
+                .map(|_| {
+                    let u = (*i as f32 + rng.gen::<f32>()) / (image_width - 1) as f32;
+                    let v = ((image_height - 1 - *j) as f32 + rng.gen::<f32>()) / (image_height - 1) as f32;
 
-            let r = camera.get_ray(u, v);
+                    let r = camera.get_ray(u, v);
 
-            color += ray_color(&r, background, &bvh, max_depth);
-        }
+                    ray_color(&r, background, &bvh, max_depth)
+                })
+                .reduce(|c, src| c + src)
+                .unwrap();
 
-        color *= inv_samples;
-        
-        image::Rgb::from_channels(float_to_u8_color(color.x), float_to_u8_color(color.y), float_to_u8_color(color.z), 0)
-    }).collect();
+            vec3_to_rgb(color * inv_samples)
+        }).collect();
+
     println!("Time elapsed: {}", now.elapsed().as_millis());
 
     let mut out_data = Vec::new();
