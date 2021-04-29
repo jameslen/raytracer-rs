@@ -428,7 +428,7 @@ impl Box {
         }
     }
 
-    pub fn full_box(min: Vec3A, max: Vec3A, color: Arc<dyn Texture>) -> Self{
+    pub fn full_box(min: Vec3A, max: Vec3A, color: Arc<dyn Material>) -> Self{
         Box{
             min: min,
             max: max,
@@ -466,10 +466,10 @@ impl Hittable for Box {
             return None;
         }
 
-        if t_min0 < t_min {
-            t_min0 = t_max0;
-            min_axis = max_axis;
-        }
+        // if t_min0 < t_min {
+        //     t_min0 = t_max0;
+        //     min_axis = max_axis;
+        // }
         
         let normal = match min_axis {
             0 => -Vec3A::X,
@@ -549,7 +549,7 @@ impl Hittable for Box {
 
 pub struct ConstantMedium<T: Hittable> {
     boundary: T,
-    negative_density: f32,
+    negative_density: f64,
     material: Arc<dyn Material>
 }
 
@@ -565,7 +565,7 @@ impl<T: Hittable> ConstantMedium<T> {
     pub fn from_color(boundary: T, density: f32, color: Vec3A) -> Self{
         Self{
             boundary: boundary,
-            negative_density: -1.0 / density,
+            negative_density: -1.0 / density as f64,
             material: Arc::new(IsotropicMat::from_color(color))
         }
     }
@@ -599,15 +599,15 @@ impl<T: Hittable> Hittable for ConstantMedium<T> {
                     record.t = 0.0;
                 }
 
-                let length = ray.direction.length();
-                let distance_inside = (record2.t - record.t) / length;
-                let hit_distance = self.negative_density * f32::ln(rng.gen_range(0.0..1.0));
+                let length = ray.direction.length() as f64;
+                let distance_inside = (record2.t - record.t) as f64 / length;
+                let hit_distance = self.negative_density * f64::ln(rng.gen_range(0.0..1.0));
 
                 if hit_distance > distance_inside {
                     return None;
                 }
 
-                let final_t = record.t + hit_distance / length;
+                let final_t = record.t + (hit_distance / length) as f32;
                 let final_point = ray.at(final_t);
 
                 if debugging {
