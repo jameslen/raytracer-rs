@@ -225,7 +225,7 @@ fn cornell_smoke() -> Scene {
     let final_transform = translation * rotation;
     let box2 = TransformedObject::new(b2, final_transform);
     //s.add_shape(box2);
-    s.add_shape(ConstantMedium::from_color(box2, 0.05, Vec3A::ONE));
+    s.add_shape(ConstantMedium::from_color(box2, 0.5, Vec3A::ONE));
 
     let b1 = Box2::new(165.0, 330.0, 165.0, LambertianMat::from_color(white));
     let rotation = Mat4::from_rotation_y(degree_to_rad(15.0));
@@ -281,7 +281,7 @@ fn final_scene() -> Scene {
     let boundary = Sphere::new(Vec3A::new(360.0,150.0,145.0), 70.0, DielectricMat::new(1.5));
     s.add_shape(ConstantMedium::from_color(boundary, 0.2, Vec3A::new(0.2, 0.4, 0.9)));
     let boundary = Sphere::new(Vec3A::new(0.0, 0.0, 0.0), 5000.0, DielectricMat::new(1.5));
-    s.add_shape(ConstantMedium::from_color(boundary, 0.001, Vec3A::new(1.0,1.0,1.0)));
+    s.add_shape(ConstantMedium::from_color(boundary, 0.005, Vec3A::new(1.0,1.0,1.0)));
 
     let emat = LambertianMat::from_texture(ImageTexture::new(String::from("earthmap.jpg")));
     s.add_shape(Sphere::new(Vec3A::new(400.0,200.0,400.0), 100.0, emat));
@@ -289,7 +289,6 @@ fn final_scene() -> Scene {
     s.add_shape(Sphere::new(Vec3A::new(220.0,280.0,300.0), 80.0, LambertianMat::from_texture(pertext)));
 
     let mut boxes2 = Scene::new();
-    
 
     for _ in 0..1000 {
         let white = LambertianMat::from_color(Vec3A::new(0.73, 0.73, 0.73));
@@ -301,7 +300,6 @@ fn final_scene() -> Scene {
     let final_transform = translation * rotation;
 
     s.add_shape(TransformedObject::new(BVHNode::from_scene(&boxes2, 0.0, 1.0), final_transform));
-
 
     return s;
 }
@@ -353,7 +351,7 @@ fn main() {
     let background: Vec3A;
 
     let quality = ImageQuality::Cornell;
-    let scene = SceneType::CornellBox;
+    let scene = SceneType::FinalScene;
 
     match quality {
         ImageQuality::Low => {
