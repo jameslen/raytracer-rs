@@ -647,9 +647,8 @@ impl<T: Hittable> ConstantMedium<T> {
 
 impl<T: Hittable> Hittable for ConstantMedium<T> {
     fn intersect(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
-        
         if let Some(mut record) = self.boundary.intersect(ray, -f32::INFINITY, f32::INFINITY) {
-            if let Some(mut record2) = self.boundary.intersect(ray, record.t + 0.001, f32::INFINITY) {
+            if let Some(mut record2) = self.boundary.intersect(ray, record.t + 0.0001, f32::INFINITY) {
                 let mut rng = rand::thread_rng();
                 let enable_debug = false;
                 let debugging = enable_debug && rng.gen::<f32>() < 0.00001;

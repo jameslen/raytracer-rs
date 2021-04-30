@@ -308,8 +308,8 @@ fn float_to_u8_color(f: f32) -> u8 {
     (256.0 * f32::clamp(f, 0.0, 0.999)) as u8
 }
 
-fn vec3_to_rgb(color: Vec3A) -> Rgb<u8> {
-    image::Rgb::from_channels(float_to_u8_color(color.x), float_to_u8_color(color.y), float_to_u8_color(color.z), 0)
+fn vec3_to_rgb(color: Vec3A) -> (u8,u8,u8) {
+    (float_to_u8_color(color.x), float_to_u8_color(color.y), float_to_u8_color(color.z))
 }
 
 #[allow(dead_code)]
@@ -350,7 +350,7 @@ fn main() {
 
     let background: Vec3A;
 
-    let quality = ImageQuality::Cornell;
+    let quality = ImageQuality::Final;
     let scene = SceneType::FinalScene;
 
     match quality {
@@ -460,7 +460,7 @@ fn main() {
     let inv_samples = 1.0 / samples_per_pixel as f32;
 
     let now = Instant::now();
-    let par: Vec<Rgb<u8>> = (0..image_width * image_height)
+    let par: Vec<(u8,u8,u8)> = (0..image_width * image_height)
         .map(|i| (i % image_width, i / image_width))
         .collect::<Vec<(u32, u32)>>()
         .par_iter()
@@ -487,9 +487,9 @@ fn main() {
     out_data.reserve(par.len() * 3);
 
     for pixel in par.iter() {
-        out_data.push(pixel.0[0]);
-        out_data.push(pixel.0[1]);
-        out_data.push(pixel.0[2]);
+        out_data.push(pixel.0);
+        out_data.push(pixel.1);
+        out_data.push(pixel.2);
     }
 
     let output: RgbImage = ImageBuffer::from_raw(image_width, image_height, out_data).unwrap();
