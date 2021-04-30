@@ -4,10 +4,12 @@ use glam::*;
 
 use crate::ray::Ray;
 use crate::hit_record::HitRecord;
-use crate::materials::Material;
+use crate::materials::*;//Material;
 use crate::aabb::AABB;
+use crate::scene::Scene;
 
-use std::rc::Rc;
+use std::sync::Arc;
+use rand::prelude::*;
 
 pub trait Hittable {
     fn intersect(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord>;
@@ -40,12 +42,21 @@ impl<T: Hittable> TransformedObject<T> {
 
     fn generate_aabb(object: &T, transform: Mat4) -> AABB {
         let base_aabb = object.bounding_box(0.0, 1.0).unwrap();
-        let min = transform.transform_point3a(base_aabb.min);
-        let max = transform.transform_point3a(base_aabb.max);
+        let min = base_aabb.min;
+        let max = base_aabb.max; 
+        let p0 = transform.transform_point3a(min);
+        let p1 = transform.transform_point3a(Vec3A::new(max.x, min.y, min.z));
+        let p2 = transform.transform_point3a(Vec3A::new(max.x, min.y, max.z));
+        let p3 = transform.transform_point3a(Vec3A::new(min.x, min.y, max.z));
+
+        let p4 = transform.transform_point3a(Vec3A::new(min.x, max.y, min.z));
+        let p5 = transform.transform_point3a(Vec3A::new(max.x, max.y, min.z));
+        let p6 = transform.transform_point3a(max);
+        let p7 = transform.transform_point3a(Vec3A::new(min.x, max.y, max.z));
 
         AABB{
-            min: min.min(max),
-            max: max.max(min)
+            min: p0.min(p1.min(p2.min(p3.min(p4.min(p5.min(p6.min(p7))))))),
+            max: p0.max(p1.max(p2.max(p3.max(p4.max(p5.max(p6.max(p7))))))),
         }
     }
 }
@@ -61,14 +72,20 @@ impl<T: Hittable> Hittable for TransformedObject<T> {
         let result = self.object.intersect(&local_ray, t_min, t_max);
 
         if let Some(record) = result {
-            return Some(HitRecord{
-                point: self.transform.transform_point3a(record.point),
+            let normal = self.transform.transform_vector3a(record.normal).normalize();
+            let point = self.transform.transform_point3a(record.point);
+            let mut record = HitRecord{
+                point: point, //ray.at(record.t),
                 t: record.t,
-                normal: self.transform.transform_vector3a(record.normal).normalize(),
+                normal: normal,
                 material: record.material,
                 tex_coords: record.tex_coords,
                 front_face: record.front_face
-            })
+            };
+
+            record.set_face_normal(ray, &normal);
+
+            return Some(record); 
         }
 
         return None;
@@ -83,7 +100,7 @@ impl<T: Hittable> Hittable for TransformedObject<T> {
 pub struct Sphere {
     pub center: Vec3A,
     pub radius: f32,
-    pub material: Rc::<dyn Material>
+    pub material: Arc::<dyn Material>
 }
 
 impl Sphere {
@@ -91,7 +108,7 @@ impl Sphere {
         Sphere {
             center: center,
             radius: radius,
-            material: Rc::new(material)
+            material: Arc::new(material)
         }
     }
 }
@@ -154,7 +171,7 @@ pub struct MovingSphere {
     pub radius: f32,
     pub time_start: f32,
     pub time_end: f32,
-    pub material: Rc::<dyn Material>
+    pub material: Arc::<dyn Material>
 }
 
 impl MovingSphere {
@@ -165,7 +182,7 @@ impl MovingSphere {
             time_start: time_start,
             time_end: time_end,
             radius: radius,
-            material: Rc::new(material)
+            material: Arc::new(material)
         }
     }
 
@@ -236,7 +253,7 @@ pub struct XYRect {
     min: Vec2,
     max: Vec2,
     offset: f32,
-    pub material: Rc::<dyn Material>
+    pub material: Arc::<dyn Material>
 }
 
 impl XYRect {
@@ -245,7 +262,16 @@ impl XYRect {
             min: min,
             max: max,
             offset: offset,
-            material: Rc::new(material)
+            material: Arc::new(material)
+        }
+    }
+
+    pub fn new_with_material(min: Vec2, max: Vec2, offset: f32, material: Arc::<dyn Material>) -> Self {
+        Self {
+            min: min,
+            max: max,
+            offset: offset,
+            material: material.clone()
         }
     }
 }
@@ -279,7 +305,7 @@ impl Hittable for XYRect {
         return Some(record);
     }
 
-    fn bounding_box(&self, t0: f32, t1: f32) -> Option<AABB> {
+    fn bounding_box(&self, _t0: f32, _t1: f32) -> Option<AABB> {
         Some(AABB {
             min: Vec3A::new(self.min.x, self.min.y, self.offset - 0.0001),
             max: Vec3A::new(self.max.x, self.max.y, self.offset + 0.0001),
@@ -291,7 +317,7 @@ pub struct XZRect {
     min: Vec2,
     max: Vec2,
     offset: f32,
-    pub material: Rc::<dyn Material>
+    pub material: Arc::<dyn Material>
 }
 
 impl XZRect {
@@ -300,7 +326,16 @@ impl XZRect {
             min: min,
             max: max,
             offset: offset,
-            material: Rc::new(material)
+            material: Arc::new(material)
+        }
+    }
+
+    pub fn new_with_material(min: Vec2, max: Vec2, offset: f32, material: Arc::<dyn Material>) -> Self {
+        Self {
+            min: min,
+            max: max,
+            offset: offset,
+            material: material.clone()
         }
     }
 }
@@ -334,7 +369,7 @@ impl Hittable for XZRect {
         return Some(record);
     }
 
-    fn bounding_box(&self, t0: f32, t1: f32) -> Option<AABB> {
+    fn bounding_box(&self, _t0: f32, _t1: f32) -> Option<AABB> {
         Some(AABB {
             min: Vec3A::new(self.min.x, self.offset - 0.0001, self.min.y),
             max: Vec3A::new(self.max.x, self.offset + 0.0001, self.max.y),
@@ -346,7 +381,7 @@ pub struct YZRect {
     min: Vec2,
     max: Vec2,
     offset: f32,
-    pub material: Rc::<dyn Material>
+    pub material: Arc::<dyn Material>
 }
 
 impl YZRect {
@@ -355,7 +390,16 @@ impl YZRect {
             min: min,
             max: max,
             offset: offset,
-            material: Rc::new(material)
+            material: Arc::new(material)
+        }
+    }
+
+    pub fn new_with_material(min: Vec2, max: Vec2, offset: f32, material: Arc::<dyn Material>) -> Self {
+        Self {
+            min: min,
+            max: max,
+            offset: offset,
+            material: material.clone()
         }
     }
 }
@@ -397,10 +441,56 @@ impl Hittable for YZRect {
     }
 }
 
+pub struct Box2 {
+    min: Vec3A,
+    max: Vec3A,
+    sides: Scene,
+    pub material: Arc::<dyn Material>
+}
+
+impl Box2 {
+    pub fn new<T: 'static + Material>(width: f32, height: f32, depth: f32, material: T) -> Self {
+        Box2::full_box(Vec3A::ZERO, Vec3A::new(width, height, depth), Arc::new(material))
+    }
+
+    pub fn full_box(min: Vec3A, max: Vec3A, color: Arc<dyn Material>) -> Self{
+        let mut sides = Scene::new();
+
+        sides.add_shape(XYRect::new_with_material(Vec2::new(min.x, min.y), Vec2::new(max.x, max.y), min.z, color.clone()));
+        sides.add_shape(XYRect::new_with_material(Vec2::new(min.x, min.y), Vec2::new(max.x, max.y), max.z, color.clone()));
+
+        sides.add_shape(XZRect::new_with_material(Vec2::new(min.x, min.z), Vec2::new(max.x, max.z), min.y, color.clone()));
+        sides.add_shape(XZRect::new_with_material(Vec2::new(min.x, min.z), Vec2::new(max.x, max.z), max.y, color.clone()));
+
+        sides.add_shape(YZRect::new_with_material(Vec2::new(min.y, min.z), Vec2::new(max.y, max.z), min.x, color.clone()));
+        sides.add_shape(YZRect::new_with_material(Vec2::new(min.y, min.z), Vec2::new(max.y, max.z), max.x, color.clone()));
+
+        Self {
+            min: min,
+            max: max,
+            sides: sides,
+            material: color.clone()
+        }
+    }
+}
+
+impl Hittable for Box2 {
+    fn intersect(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
+        self.sides.intersect(ray, t_min, t_max)
+    }
+
+    fn bounding_box(&self, _t0: f32, _t1: f32) -> Option<AABB> {
+        Some(AABB{
+            min: self.min,
+            max: self.max
+        })
+    }
+}
+
 pub struct Box {
     min: Vec3A,
     max: Vec3A,
-    pub material: Rc::<dyn Material>
+    pub material: Arc::<dyn Material>
 }
 
 impl Box {
@@ -408,7 +498,15 @@ impl Box {
         Box{ 
             min: Vec3A::ZERO,
             max: Vec3A::new(width, height, depth),
-            material: Rc::new(material)
+            material: Arc::new(material)
+        }
+    }
+
+    pub fn full_box(min: Vec3A, max: Vec3A, color: Arc<dyn Material>) -> Self{
+        Box{
+            min: min,
+            max: max,
+            material: color.clone()
         }
     }
 }
@@ -435,12 +533,17 @@ impl Hittable for Box {
         let min = (self.min - ray.origin) * recip;
         let max = (self.max - ray.origin) * recip;
 
-        let (t_min, min_axis) = axis_max(axis_max(axis_min((min.x, 0), (max.x, 1)), axis_min((min.y, 2), (max.y, 3))), axis_min((min.z, 4), (max.z, 5)));
-        let (t_max, max_axis) = axis_min(axis_min(axis_max((min.x, 0), (max.x, 1)), axis_max((min.y, 2), (max.y, 3))), axis_max((min.z, 4), (max.z, 5)));
+        let (mut t_min0, mut min_axis) = axis_max(axis_max(axis_min((min.x, 0), (max.x, 1)), axis_min((min.y, 2), (max.y, 3))), axis_min((min.z, 4), (max.z, 5)));
+        let (t_max0, max_axis)         = axis_min(axis_min(axis_max((min.x, 0), (max.x, 1)), axis_max((min.y, 2), (max.y, 3))), axis_max((min.z, 4), (max.z, 5)));
 
-        if t_max < 0.0 || t_min > t_max {
+        if t_max0 <= 0.0 || t_min0 > t_max0 || t_min0 > t_max {
             return None;
         }
+
+        // if t_min0 < t_min {
+        //     t_min0 = t_max0;
+        //     min_axis = max_axis;
+        // }
         
         let normal = match min_axis {
             0 => -Vec3A::X,
@@ -449,15 +552,59 @@ impl Hittable for Box {
             3 =>  Vec3A::Y,
             4 => -Vec3A::Z,
             5 =>  Vec3A::Z,
-            _ =>  Vec3A::ZERO
+            _ =>  {
+                println!("WTF");
+                Vec3A::ZERO
+            }
+        };
+
+        // let color = match min_axis {
+        //     0 => Vec3A::X + Vec3A::Y,
+        //     1 =>  Vec3A::X,
+        //     2 => Vec3A::Y + Vec3A::Z,
+        //     3 =>  Vec3A::Y,
+        //     4 =>  Vec3A::Z + Vec3A::X,
+        //     5 =>  Vec3A::Z,
+        //     _ =>  {
+        //         println!("WTF");
+        //         Vec3A::ZERO
+        //     }
+        // };
+
+        let point = ray.at(t_min0);
+        let delta = point / self.max;
+        let tex_coords = match min_axis {
+            0 => { // X_MIN
+                (delta.y, delta.z)
+            },
+            1 => { // X_MAX
+                (delta.y, delta.z)
+            },
+            2 => { // Y_MIN
+                (delta.x, delta.z)
+            },
+            3 => { // Y_MAX
+                (delta.x, delta.z)
+            },
+            4 => { // Z_MIN
+                (delta.x, delta.y)
+            },
+            5 => { // Z_MAX
+                (delta.x, delta.y)
+            },
+            _ =>  {
+                println!("WTF");
+                (0.0, 0.0)
+            }
         };
 
         let mut record = HitRecord{
-            t: t_min,
-            point: ray.at(t_min),
-            tex_coords: (0.0, 0.0), // TODO: Impl tex coords
+            t: t_min0,
+            point: point,
+            tex_coords: tex_coords, // TODO: Impl tex coords
             normal: normal,
             material: self.material.clone(),
+            //material: Arc::new(LambertianMat::from_texture(SolidColor{ color: color })),
             front_face: true
         };
 
@@ -471,5 +618,89 @@ impl Hittable for Box {
             min: self.min,
             max: self.max
         })
+    }
+}
+
+pub struct ConstantMedium<T: Hittable> {
+    boundary: T,
+    negative_density: f64,
+    material: Arc<dyn Material>
+}
+
+impl<T: Hittable> ConstantMedium<T> {
+    // pub fn new(boundary: T, density: f32, texture: Arc<dyn Texture>) -> Self{
+    //     Self{
+    //         boundary: boundary,
+    //         negative_density: -1.0 / density,
+    //         material: Arc::new(IsotropicMat::new(texture.clone()))
+    //     }
+    // }
+
+    pub fn from_color(boundary: T, density: f32, color: Vec3A) -> Self{
+        Self{
+            boundary: boundary,
+            negative_density: -1.0 / density as f64,
+            material: Arc::new(IsotropicMat::from_color(color))
+        }
+    }
+}
+
+impl<T: Hittable> Hittable for ConstantMedium<T> {
+    fn intersect(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
+        
+        if let Some(mut record) = self.boundary.intersect(ray, -f32::INFINITY, f32::INFINITY) {
+            if let Some(mut record2) = self.boundary.intersect(ray, record.t + 0.001, f32::INFINITY) {
+                let mut rng = rand::thread_rng();
+                let enable_debug = false;
+                let debugging = enable_debug && rng.gen::<f32>() < 0.00001;
+
+                if debugging {
+                    println!("t_min = {}, t_max = {}", record.t, record2.t);
+                }
+
+                if record.t < t_min {
+                    record.t = t_min;
+                }
+                if record2.t > t_max {
+                    record2.t = t_max;
+                }
+
+                if record.t >= record2.t {
+                    return None;
+                }
+
+                if record.t < 0.0 {
+                    record.t = 0.0;
+                }
+
+                let length = ray.direction.length() as f64;
+                let distance_inside = (record2.t - record.t) as f64 / length;
+                let hit_distance = self.negative_density * f64::ln(rng.gen_range(0.0..1.0));
+
+                if hit_distance > distance_inside {
+                    return None;
+                }
+
+                let final_t = record.t + (hit_distance / length) as f32;
+                let final_point = ray.at(final_t);
+
+                if debugging {
+                    println!("distance = {},\nt = {}, \np: {:?}", hit_distance, final_t, final_point);
+                }
+
+                return Some(HitRecord{
+                    t: final_t,
+                    point: final_point,
+                    normal: Vec3A::X,
+                    front_face: true,
+                    material: self.material.clone(),
+                    tex_coords: (0.0, 0.0)
+                });
+            }
+        }
+        return None;
+    }
+    fn bounding_box(&self, _t0: f32, _t1: f32) -> Option<AABB> {
+        self.boundary.bounding_box(_t0, _t1)
     }
 }

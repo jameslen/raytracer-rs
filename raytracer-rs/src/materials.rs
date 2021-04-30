@@ -6,7 +6,7 @@ use crate::texture::*;
 
 use crate::vec3_helpers;
 
-use std::rc::Rc;
+use std::sync::Arc;
 
 use glam::*;
 
@@ -19,17 +19,17 @@ pub trait Material {
 
 #[derive(Clone)]
 pub struct LambertianMat {
-    albedo: Rc<dyn Texture>
+    albedo: Arc<dyn Texture>
 }
 
 impl LambertianMat {
     pub fn from_texture<T: 'static + Texture>(albedo: T) -> Self {
         LambertianMat{
-            albedo: Rc::new(albedo)
+            albedo: Arc::new(albedo)
         }
     }
 
-    pub fn from_shared_texture(albedo: Rc<dyn Texture>) -> Self {
+    pub fn from_shared_texture(albedo: Arc<dyn Texture>) -> Self {
         LambertianMat {
             albedo: albedo
         }
@@ -37,7 +37,7 @@ impl LambertianMat {
 
     pub fn from_color(albedo: Vec3A) -> Self {
         LambertianMat{
-            albedo: Rc::new(SolidColor{color: albedo})
+            albedo: Arc::new(SolidColor{color: albedo})
         }
     }
 }
@@ -159,13 +159,13 @@ impl Material for NoMaterial {
 }
 
 pub struct DiffuseLight {
-    emit: Rc<dyn Texture>
+    emit: Arc<dyn Texture>
 }
 
 impl DiffuseLight {
     pub fn from_texture<T: 'static + Texture>(texture: T) -> Self {
         DiffuseLight {
-            emit: Rc::new(texture)
+            emit: Arc::new(texture)
         }
     }
     pub fn from_color(color: Vec3A) -> Self {
@@ -180,5 +180,36 @@ impl Material for DiffuseLight {
 
     fn emitted(&self, tex_coords: (f32, f32), point: Vec3A) -> Vec3A {
         self.emit.value(tex_coords, point)
+    }
+}
+
+pub struct IsotropicMat {
+    pub albedo: Arc<dyn Texture>
+}
+
+impl IsotropicMat {
+    pub fn from_texture<T: 'static + Texture>(texture: T) -> Self {
+        Self {
+            albedo: Arc::new(texture)
+        }
+    }
+
+    pub fn from_color(texture: Vec3A) -> Self {
+        Self {
+            albedo: Arc::new(SolidColor{color: texture})
+        }
+    }
+}
+
+impl Material for IsotropicMat {
+    fn scatter(&self, _ray: &Ray, _record: &HitRecord, _attentuation: &mut Vec3A, _scattered: &mut Ray) -> bool {
+        *_scattered = Ray{
+            direction: vec3_helpers::random_in_unit_sphere().normalize(),
+            origin: _record.point,
+            time: _ray.time
+        };
+        *_attentuation = self.albedo.value(_record.tex_coords, _record.point);
+
+        return true;
     }
 }

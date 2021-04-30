@@ -3,10 +3,10 @@ use crate::ray::Ray;
 use crate::aabb::AABB;
 use crate::hit_record::HitRecord;
 
-use std::rc::Rc;
+use std::sync::Arc;
 
 pub struct Scene {
-    pub shapes: Vec<Rc<dyn Hittable>>,
+    pub shapes: Vec<Arc<dyn Hittable>>,
 }
 
 impl Scene {
@@ -15,7 +15,7 @@ impl Scene {
     }
 
     pub fn add_shape<S: 'static + Hittable>(&mut self, shape: S) {
-        self.shapes.push(Rc::new(shape));
+        self.shapes.push(Arc::new(shape));
     }
 
     pub fn clear(&mut self) {
@@ -67,3 +67,6 @@ impl Hittable for Scene {
         return Some(result);
     }
 }
+
+unsafe impl Send for Scene {}
+unsafe impl Sync for Scene {}

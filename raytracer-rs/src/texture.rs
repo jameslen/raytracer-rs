@@ -5,7 +5,7 @@ use glam::*;
 
 use crate::perlin::Perlin;
 
-use std::rc::Rc;
+use std::sync::Arc;
 
 pub trait Texture {
     fn value(&self, coords: (f32, f32), point: Vec3A) -> Vec3A;
@@ -22,19 +22,19 @@ impl Texture for SolidColor {
 }
 
 pub struct CheckeredTexture {
-    pub odd: Rc<dyn Texture>,
-    pub even: Rc<dyn Texture>
+    pub odd: Arc<dyn Texture>,
+    pub even: Arc<dyn Texture>
 }
 
 impl CheckeredTexture {
     pub fn from_texture<S: 'static + Texture, T: 'static + Texture>(odd: S, even: T) -> Self {
         CheckeredTexture{
-            odd: Rc::new(odd),
-            even: Rc::new(even)
+            odd: Arc::new(odd),
+            even: Arc::new(even)
         }
     }
 
-    pub fn from_shared_texture(odd: Rc<dyn Texture>, even: Rc<dyn Texture>) -> Self {
+    pub fn from_shared_texture(odd: Arc<dyn Texture>, even: Arc<dyn Texture>) -> Self {
         CheckeredTexture{
             odd: odd.clone(),
             even: even.clone()
@@ -43,8 +43,8 @@ impl CheckeredTexture {
 
     pub fn from_color(odd: Vec3A, even: Vec3A) -> Self {
         CheckeredTexture{
-            odd: Rc::new(SolidColor{color: odd}),
-            even: Rc::new(SolidColor{color: even})
+            odd: Arc::new(SolidColor{color: odd}),
+            even: Arc::new(SolidColor{color: even})
         }
     }
 }
